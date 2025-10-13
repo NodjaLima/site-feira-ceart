@@ -887,7 +887,7 @@ app.get('/admin', (req, res) => {
 });
 
 // Endpoint para rodar seed (apenas em desenvolvimento ou com senha)
-app.post('/api/seed', (req, res) => {
+app.post('/api/seed', async (req, res) => {
   const { password } = req.body;
   const SEED_PASSWORD = process.env.SEED_PASSWORD || 'ceart2025';
   
@@ -895,17 +895,47 @@ app.post('/api/seed', (req, res) => {
     return res.status(401).json({ error: 'Senha inválida' });
   }
   
-  // Executar seed
-  const { execSync } = require('child_process');
   try {
-    const output = execSync('node scripts/seed.js', { 
-      cwd: __dirname,
-      env: process.env, // Passar variáveis de ambiente
-      encoding: 'utf8'
+    // Usar require inline para pegar dados de seed
+    delete require.cache[require.resolve('./scripts/seed-data.js')];
+    const seedData = require('./scripts/seed-data.js');
+    
+    // Limpar tabelas
+    await new Promise((resolve) => {
+      db.serialize(() => {
+        db.run('DELETE FROM expositores');
+        db.run('DELETE FROM posts');
+        db.run('DELETE FROM galeria');
+        db.run('DELETE FROM carrossel', resolve);
+      });
     });
-    res.json({ success: true, message: 'Banco populado com sucesso!', output });
+    
+    // Inserir expositores
+    const insertedExpositores = await new Promise((resolve, reject) => {
+      const stmt = db.prepare('INSERT INTO expositores (nome, categoria, descricao, contato, telefone, email, site) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      let count = 0;
+      seedData.expositores.forEach(exp => {
+        const contato = `${exp.cidade} - ${exp.estado}`;
+        stmt.run(exp.nome, exp.categoria, exp.descricao, contato, exp.telefone, exp.email, exp.instagram, (err) => {
+          if (err) reject(err);
+          count++;
+          if (count === seedData.expositores.length) {
+            stmt.finalize();
+            resolve(count);
+          }
+        });
+      });
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Banco populado com sucesso!',
+      inserted: {
+        expositores: insertedExpositores
+      }
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message, stderr: error.stderr?.toString() });
+    res.status(500).json({ error: error.message });
   }
 });
 
