@@ -6,6 +6,8 @@ const fs = require('fs');
 const multer = require('multer');
 const sqlite3 = require('sqlite3').verbose();
 const session = require('express-session');
+const SqliteStore = require('better-sqlite3-session-store')(session);
+const Database = require('better-sqlite3');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 
@@ -50,8 +52,25 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Configuração de sessão
+// Configurar caminho do banco de dados de sessões (suporta volume persistente)
+const DATA_DIR = process.env.DATA_DIR || '.';
+const SESSIONS_DB_PATH = path.join(DATA_DIR, 'sessions.db');
+
+// Criar diretório de dados se não existir
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// Configuração de sessão com SQLite Store (produção-ready)
+const sessionDb = new Database(SESSIONS_DB_PATH);
 app.use(session({
+  store: new SqliteStore({
+    client: sessionDb,
+    expired: {
+      clear: true,
+      intervalMs: 900000 // Limpar sessões expiradas a cada 15 minutos
+    }
+  }),
   secret: process.env.SESSION_SECRET || 'ceart-cms-secret-key-2025',
   resave: false,
   saveUninitialized: false,
@@ -61,6 +80,8 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000 // 24 horas
   }
 }));
+
+console.log(`🔐 Sessões configuradas com SQLite Store em: ${SESSIONS_DB_PATH}`);
 
 // Configurar diretório de uploads (suporta volume persistente)
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
@@ -100,16 +121,10 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
-// Configurar caminho do banco de dados (suporta volume persistente)
-const DATA_DIR = process.env.DATA_DIR || '.';
+// Configurar caminho do banco de dados principal
 const DB_PATH = path.join(DATA_DIR, 'ceart_cms.db');
 
 console.log(`📁 Banco de dados configurado em: ${DB_PATH}`);
-
-// Criar diretório de dados se não existir
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
 
 // Inicializar banco de dados com otimizações
 const db = new sqlite3.Database(DB_PATH);
