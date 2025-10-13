@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadStats();
     loadExpositores();
     loadPosts();
-    loadGaleria();
+    loadGalerias();
     loadCarrossel();
     loadArquivos();
     loadConfiguracoes();
@@ -374,27 +374,30 @@ async function deletePost(id) {
 
 // ===================== GALERIA =====================
 
-async function loadGaleria() {
+// Variável global para controlar a galeria selecionada
+let galeriaAtualId = null;
+
+async function loadGalerias() {
     try {
-        const response = await fetch(`${API_BASE}/galeria`);
+        const response = await fetch(`${API_BASE}/galerias`);
         galeria = await response.json();
-        renderGaleria();
+        renderGalerias();
     } catch (error) {
-        console.error('Erro ao carregar galeria:', error);
-        showError('Erro ao carregar galeria');
+        console.error('Erro ao carregar galerias:', error);
+        showError('Erro ao carregar galerias');
     }
 }
 
-function renderGaleria() {
-    const container = document.getElementById('galeriaList');
+function renderGalerias() {
+    const container = document.getElementById('galeriasCollectionList');
     
     if (galeria.length === 0) {
         container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #666;">
+            <div style="text-align: center; padding: 2rem; color: #666;">
                 <i class="fas fa-images" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                <p>Nenhuma imagem na galeria ainda.</p>
-                <button class="btn btn-primary" onclick="openModal('galeriaModal')" style="margin-top: 1rem;">
-                    <i class="fas fa-plus"></i> Adicionar Primeira Imagem
+                <p>Nenhuma galeria criada ainda.</p>
+                <button class="btn btn-primary" onclick="openModal('novaGaleriaModal')" style="margin-top: 1rem;">
+                    <i class="fas fa-plus"></i> Criar Primeira Galeria
                 </button>
             </div>
         `;
@@ -402,20 +405,91 @@ function renderGaleria() {
     }
     
     container.innerHTML = galeria.map(item => `
+        <div class="item-card ${item.ativo ? 'ativo' : 'inativo'}" onclick="selectGaleria(${item.id})" style="cursor: pointer; ${galeriaAtualId === item.id ? 'border: 3px solid #4CAF50;' : ''}">
+            <div class="item-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 class="item-title">${item.titulo}</h4>
+                <span class="badge ${item.ativo ? 'badge-success' : 'badge-secondary'}">
+                    ${item.ativo ? 'Ativa' : 'Inativa'}
+                </span>
+            </div>
+            <div class="item-meta">
+                <strong>Data do Evento:</strong> ${item.data_evento || 'Não definida'}<br>
+                <strong>Ordem:</strong> ${item.ordem}<br>
+                ${item.descricao ? item.descricao.substring(0, 100) + '...' : ''}
+            </div>
+            <div class="item-actions" style="margin-top: 1rem;">
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); editGaleria(${item.id})">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteGaleria(${item.id})">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function selectGaleria(id) {
+    galeriaAtualId = id;
+    renderGalerias(); // Re-renderiza para mostrar seleção
+    await loadGaleriaItens(id);
+    
+    // Mostra o card de itens e atualiza o título
+    const card = document.getElementById('galeriaItensCard');
+    card.style.display = 'block';
+    
+    const galeriaObj = galeria.find(g => g.id === id);
+    const headerTitle = card.querySelector('.card-header h3');
+    if (galeriaObj) {
+        headerTitle.innerHTML = `<i class="fas fa-images"></i> Fotos da Galeria: ${galeriaObj.titulo}`;
+    }
+    
+    // Habilita o botão de adicionar foto
+    document.getElementById('galeriaIdInput').value = id;
+}
+
+async function loadGaleriaItens(galeriaId) {
+    try {
+        const response = await fetch(`${API_BASE}/galerias/${galeriaId}/itens`);
+        const itens = await response.json();
+        renderGaleriaItens(itens);
+    } catch (error) {
+        console.error('Erro ao carregar itens da galeria:', error);
+        showError('Erro ao carregar itens da galeria');
+    }
+}
+
+function renderGaleriaItens(itens) {
+    const container = document.getElementById('galeriaItensList');
+    
+    if (itens.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #666;">
+                <i class="fas fa-image" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>Nenhuma foto nesta galeria ainda.</p>
+                <button class="btn btn-primary" onclick="openModal('novaImagemModal')" style="margin-top: 1rem;">
+                    <i class="fas fa-plus"></i> Adicionar Primeira Foto
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = itens.map(item => `
         <div class="item-card gallery-item">
-            <img src="${item.imagem}" alt="${item.titulo}" style="width: 100%; height: 200px; object-fit: cover;">
-            <div class="gallery-overlay">
+            <img src="${item.imagem}" alt="${item.titulo}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px 8px 0 0;">
+            <div style="padding: 1rem;">
                 <div class="item-title">${item.titulo}</div>
                 <div class="item-meta">
-                    <strong>Categoria:</strong> ${item.categoria}<br>
-                    ${item.descricao ? item.descricao.substring(0, 80) + '...' : ''}
+                    <strong>Ordem:</strong> ${item.ordem}<br>
+                    ${item.descricao ? item.descricao.substring(0, 80) + '...' : 'Sem descrição'}
                 </div>
                 <div class="item-actions" style="margin-top: 1rem;">
-                    <button class="btn btn-secondary btn-sm" onclick="editGaleria(${item.id})">
-                        <i class="fas fa-edit"></i>
+                    <button class="btn btn-secondary btn-sm" onclick="editGaleriaItem(${item.id})">
+                        <i class="fas fa-edit"></i> Editar
                     </button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteGaleria(${item.id})">
-                        <i class="fas fa-trash"></i>
+                    <button class="btn btn-danger btn-sm" onclick="deleteGaleriaItem(${item.id})">
+                        <i class="fas fa-trash"></i> Excluir
                     </button>
                 </div>
             </div>
@@ -423,13 +497,122 @@ function renderGaleria() {
     `).join('');
 }
 
+// ========== GERENCIAR GALERIAS (Coleções) ==========
+
 async function saveGaleria(formData) {
     try {
-        const form = document.getElementById('galeriaForm');
+        const form = document.getElementById('novaGaleriaForm');
         const editId = form.getAttribute('data-edit-id');
         const isEdit = editId !== null;
         
-        const url = isEdit ? `${API_BASE}/galeria/${editId}` : `${API_BASE}/galeria`;
+        // Converter formData para JSON
+        const data = {
+            titulo: formData.get('titulo'),
+            descricao: formData.get('descricao'),
+            data_evento: formData.get('data_evento'),
+            ordem: parseInt(formData.get('ordem')) || 0,
+            ativo: formData.get('ativo') === 'on' ? 1 : 0
+        };
+        
+        const url = isEdit ? `${API_BASE}/galerias/${editId}` : `${API_BASE}/galerias`;
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccess(isEdit ? 'Galeria atualizada com sucesso!' : 'Galeria criada com sucesso!');
+            closeModal('novaGaleriaModal');
+            
+            // Reset form
+            form.reset();
+            form.removeAttribute('data-edit-id');
+            form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Criar Galeria';
+            document.querySelector('#novaGaleriaModal .modal-header h3').innerHTML = '<i class="fas fa-folder"></i> Nova Galeria';
+            
+            loadGalerias();
+            loadStats();
+        } else {
+            showError(result.error || (isEdit ? 'Erro ao atualizar galeria' : 'Erro ao criar galeria'));
+        }
+    } catch (error) {
+        console.error('Erro ao salvar galeria:', error);
+        showError('Erro ao salvar galeria');
+    }
+}
+
+async function editGaleria(id) {
+    const item = galeria.find(g => g.id === id);
+    if (item) {
+        const form = document.getElementById('novaGaleriaForm');
+        form.querySelector('[name="titulo"]').value = item.titulo || '';
+        form.querySelector('[name="descricao"]').value = item.descricao || '';
+        form.querySelector('[name="data_evento"]').value = item.data_evento || '';
+        form.querySelector('[name="ordem"]').value = item.ordem || 0;
+        form.querySelector('[name="ativo"]').checked = item.ativo === 1;
+        
+        // Modo de edição
+        form.setAttribute('data-edit-id', id);
+        form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Atualizar Galeria';
+        
+        openModal('novaGaleriaModal');
+        document.querySelector('#novaGaleriaModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Galeria';
+    }
+}
+
+async function deleteGaleria(id) {
+    const item = galeria.find(g => g.id === id);
+    if (item && confirm(`Tem certeza que deseja excluir a galeria "${item.titulo}"?\n\nTodas as fotos desta galeria também serão excluídas!`)) {
+        try {
+            const response = await fetch(`${API_BASE}/galerias/${id}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showSuccess('Galeria excluída com sucesso!');
+                
+                // Se era a galeria selecionada, limpa a seleção
+                if (galeriaAtualId === id) {
+                    galeriaAtualId = null;
+                    document.getElementById('galeriaItensCard').style.display = 'none';
+                }
+                
+                loadGalerias();
+                loadStats();
+            } else {
+                showError(result.error || 'Erro ao excluir galeria');
+            }
+        } catch (error) {
+            console.error('Erro ao excluir galeria:', error);
+            showError('Erro ao excluir galeria');
+        }
+    }
+}
+
+// ========== GERENCIAR ITENS DA GALERIA (Fotos) ==========
+
+async function saveGaleriaItem(formData) {
+    try {
+        if (!galeriaAtualId) {
+            showError('Selecione uma galeria primeiro!');
+            return;
+        }
+        
+        const form = document.getElementById('novaImagemForm');
+        const editId = form.getAttribute('data-edit-id');
+        const isEdit = editId !== null;
+        
+        // Garantir que o galeria_id está no formData
+        formData.set('galeria_id', galeriaAtualId);
+        
+        const url = isEdit ? `${API_BASE}/galeria-itens/${editId}` : `${API_BASE}/galerias/${galeriaAtualId}/itens`;
         const method = isEdit ? 'PUT' : 'POST';
         
         const response = await fetch(url, {
@@ -440,68 +623,74 @@ async function saveGaleria(formData) {
         const result = await response.json();
         
         if (result.success) {
-            showSuccess(isEdit ? 'Imagem atualizada com sucesso!' : 'Imagem adicionada à galeria com sucesso!');
-            closeModal('galeriaModal');
+            showSuccess(isEdit ? 'Foto atualizada com sucesso!' : 'Foto adicionada à galeria com sucesso!');
+            closeModal('novaImagemModal');
             
-            // Reset form for next use
+            // Reset form
+            form.reset();
             form.removeAttribute('data-edit-id');
             form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Adicionar à Galeria';
-            document.querySelector('#galeriaModal .modal-header h3').innerHTML = '<i class="fas fa-images"></i> Nova Imagem da Galeria';
+            document.querySelector('#novaImagemModal .modal-header h3').innerHTML = '<i class="fas fa-image"></i> Nova Foto';
             form.querySelector('[name="imagem"]').setAttribute('required', 'required');
             
-            loadGaleria();
+            loadGaleriaItens(galeriaAtualId);
             loadStats();
         } else {
-            showError(result.error || (isEdit ? 'Erro ao atualizar imagem' : 'Erro ao adicionar imagem'));
+            showError(result.error || (isEdit ? 'Erro ao atualizar foto' : 'Erro ao adicionar foto'));
         }
     } catch (error) {
-        console.error('Erro ao salvar na galeria:', error);
-        showError('Erro ao salvar imagem');
+        console.error('Erro ao salvar foto:', error);
+        showError('Erro ao salvar foto');
     }
 }
 
-async function editGaleria(id) {
-    const item = galeria.find(g => g.id === id);
-    if (item) {
-        // Preencher o formulário com os dados da imagem
-        const form = document.getElementById('galeriaForm');
-        form.querySelector('[name="titulo"]').value = item.titulo || '';
-        form.querySelector('[name="categoria"]').value = item.categoria || '';
-        form.querySelector('[name="descricao"]').value = item.descricao || '';
+async function editGaleriaItem(id) {
+    // Preciso buscar o item do servidor pois não está mais na variável global
+    try {
+        const response = await fetch(`${API_BASE}/galeria-itens/${id}`);
+        const item = await response.json();
         
-        // Alterar o formulário para modo de edição
-        form.setAttribute('data-edit-id', id);
-        form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Atualizar Imagem';
-        
-        // Abrir o modal
-        openModal('galeriaModal');
-        document.querySelector('#galeriaModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Imagem';
-        
-        // Tornar o campo de imagem opcional para edição
-        form.querySelector('[name="imagem"]').removeAttribute('required');
+        if (item) {
+            const form = document.getElementById('novaImagemForm');
+            form.querySelector('[name="titulo"]').value = item.titulo || '';
+            form.querySelector('[name="descricao"]').value = item.descricao || '';
+            form.querySelector('[name="ordem"]').value = item.ordem || 0;
+            
+            // Modo de edição
+            form.setAttribute('data-edit-id', id);
+            form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Atualizar Foto';
+            
+            openModal('novaImagemModal');
+            document.querySelector('#novaImagemModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Foto';
+            
+            // Tornar o campo de imagem opcional para edição
+            form.querySelector('[name="imagem"]').removeAttribute('required');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar item para edição:', error);
+        showError('Erro ao carregar foto');
     }
 }
 
-async function deleteGaleria(id) {
-    const item = galeria.find(g => g.id === id);
-    if (item && confirm(`Tem certeza que deseja excluir a imagem "${item.titulo}"?`)) {
+async function deleteGaleriaItem(id) {
+    if (confirm('Tem certeza que deseja excluir esta foto?')) {
         try {
-            const response = await fetch(`${API_BASE}/galeria/${id}`, {
+            const response = await fetch(`${API_BASE}/galeria-itens/${id}`, {
                 method: 'DELETE'
             });
             
             const result = await response.json();
             
             if (result.success) {
-                showSuccess('Imagem excluída com sucesso!');
-                loadGaleria();
+                showSuccess('Foto excluída com sucesso!');
+                loadGaleriaItens(galeriaAtualId);
                 loadStats();
             } else {
-                showError(result.error || 'Erro ao excluir imagem');
+                showError(result.error || 'Erro ao excluir foto');
             }
         } catch (error) {
-            console.error('Erro ao excluir imagem:', error);
-            showError('Erro ao excluir imagem');
+            console.error('Erro ao excluir foto:', error);
+            showError('Erro ao excluir foto');
         }
     }
 }
@@ -869,13 +1058,23 @@ function setupForms() {
         });
     }
     
-    // Form de Galeria
-    const galeriaForm = document.getElementById('galeriaForm');
-    if (galeriaForm) {
-        galeriaForm.addEventListener('submit', function(e) {
+    // Form de Nova Galeria (Coleção)
+    const novaGaleriaForm = document.getElementById('novaGaleriaForm');
+    if (novaGaleriaForm) {
+        novaGaleriaForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
             saveGaleria(formData);
+        });
+    }
+    
+    // Form de Nova Imagem (Foto da Galeria)
+    const novaImagemForm = document.getElementById('novaImagemForm');
+    if (novaImagemForm) {
+        novaImagemForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            saveGaleriaItem(formData);
         });
     }
     
