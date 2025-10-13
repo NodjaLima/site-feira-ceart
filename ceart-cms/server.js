@@ -217,8 +217,12 @@ app.get('/api/expositores/:id', (req, res) => {
 
 // POST - Criar expositor
 app.post('/api/expositores', upload.single('foto'), (req, res) => {
-  const { nome, categoria, descricao, contato, telefone, email, site } = req.body;
+  const { nome, categoria, descricao, cidade, estado, telefone, email, instagram } = req.body;
   const imagem = req.file ? `/uploads/${req.file.filename}` : null;
+  
+  // Mapear campos do formulário para campos do banco
+  const contato = cidade && estado ? `${cidade} - ${estado}` : (cidade || estado || null);
+  const site = instagram || null;
   
   const query = `
     INSERT INTO expositores (nome, categoria, descricao, contato, telefone, email, site, imagem)
@@ -241,7 +245,11 @@ app.post('/api/expositores', upload.single('foto'), (req, res) => {
 // PUT - Atualizar expositor
 app.put('/api/expositores/:id', upload.single('foto'), (req, res) => {
   const { id } = req.params;
-  const { nome, categoria, descricao, contato, telefone, email, site } = req.body;
+  const { nome, categoria, descricao, cidade, estado, telefone, email, instagram } = req.body;
+  
+  // Mapear campos do formulário para campos do banco
+  const contato = cidade && estado ? `${cidade} - ${estado}` : (cidade || estado || null);
+  const site = instagram || null;
   
   let query = `
     UPDATE expositores 
