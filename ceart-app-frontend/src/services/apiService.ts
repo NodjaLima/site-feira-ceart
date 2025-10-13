@@ -60,29 +60,32 @@ export interface Configuracao {
 
 // Classe para gerenciar chamadas da API
 class ApiService {
-  private baseURL: string;
-
-  constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL;
+  constructor() {
+    console.log('[API] Inicializado com URL:', API_BASE_URL);
   }
 
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
+      const url = `${API_BASE_URL}${endpoint}`;
+      console.log(`[API] Chamando: ${url}`);
+      const response = await fetch(url, {
+        ...options,
         headers: {
           'Content-Type': 'application/json',
-          ...options?.headers,
+          ...options.headers,
         },
-        ...options,
       });
 
+      console.log(`[API] Response status: ${response.status}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log(`[API] Data received:`, data);
+      return data;
     } catch (error) {
-      console.error(`API call failed for ${endpoint}:`, error);
+      console.error(`[API] Call failed for ${endpoint}:`, error);
       throw error;
     }
   }

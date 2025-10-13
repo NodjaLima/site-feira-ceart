@@ -18,21 +18,26 @@ const Expositores = () => {
   useEffect(() => {
     const fetchExpositores = async () => {
       try {
+        console.log('[Expositores] Iniciando carregamento...');
         setLoading(true);
         const expositoresData = await apiService.getExpositoresAtivos();
+        console.log('[Expositores] Dados recebidos:', expositoresData);
         setAllExpositores(expositoresData);
         
         // Extrair categorias únicas
         const categoriasUnicas = ['Todas', ...new Set(expositoresData.map(exp => exp.categoria))];
+        console.log('[Expositores] Categorias:', categoriasUnicas);
         setCategorias(categoriasUnicas);
         
       } catch (error) {
-        console.error('Erro ao carregar expositores:', error);
+        console.error('[Expositores] Erro ao carregar:', error);
       } finally {
+        console.log('[Expositores] Finalizando carregamento');
         setLoading(false);
       }
     };
 
+    console.log('[Expositores] useEffect executado');
     fetchExpositores();
   }, []);
 
