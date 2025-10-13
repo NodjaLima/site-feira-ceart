@@ -110,8 +110,7 @@ async function loadStats() {
 async function loadExpositores() {
     try {
         const response = await fetch(`${API_BASE}/expositores`);
-        const data = await response.json();
-        expositores = data.data;
+        expositores = await response.json();
         renderExpositores();
     } catch (error) {
         console.error('Erro ao carregar expositores:', error);
@@ -244,8 +243,7 @@ async function deleteExpositor(id) {
 async function loadPosts() {
     try {
         const response = await fetch(`${API_BASE}/posts`);
-        const data = await response.json();
-        posts = data.data;
+        posts = await response.json();
         renderPosts();
     } catch (error) {
         console.error('Erro ao carregar posts:', error);
@@ -379,8 +377,7 @@ async function deletePost(id) {
 async function loadGaleria() {
     try {
         const response = await fetch(`${API_BASE}/galeria`);
-        const data = await response.json();
-        galeria = data.data;
+        galeria = await response.json();
         renderGaleria();
     } catch (error) {
         console.error('Erro ao carregar galeria:', error);
@@ -514,8 +511,7 @@ async function deleteGaleria(id) {
 async function loadCarrossel() {
     try {
         const response = await fetch(`${API_BASE}/carrossel`);
-        const data = await response.json();
-        carrossel = data.data;
+        carrossel = await response.json();
         renderCarrossel();
     } catch (error) {
         console.error('Erro ao carregar carrossel:', error);
@@ -648,8 +644,7 @@ async function deleteCarrossel(id) {
 async function loadArquivos() {
     try {
         const response = await fetch(`${API_BASE}/arquivos`);
-        const data = await response.json();
-        arquivos = data.data;
+        arquivos = await response.json();
         renderArquivos();
     } catch (error) {
         console.error('Erro ao carregar arquivos:', error);
@@ -799,14 +794,13 @@ function formatFileSize(bytes) {
 async function loadConfiguracoes() {
     try {
         const response = await fetch(`${API_BASE}/configuracoes`);
-        const data = await response.json();
-        const config = data.data;
+        const config = await response.json();
         
         // Preencher campos com valores do banco
-        if (config.site_name) document.getElementById('siteName').value = config.site_name;
-        if (config.site_email) document.getElementById('siteEmail').value = config.site_email;
-        if (config.site_phone) document.getElementById('sitePhone').value = config.site_phone;
-        if (config.site_address) document.getElementById('siteAddress').value = config.site_address;
+        if (config && config.site_name) document.getElementById('siteName').value = config.site_name;
+        if (config && config.site_email) document.getElementById('siteEmail').value = config.site_email;
+        if (config && config.site_phone) document.getElementById('sitePhone').value = config.site_phone;
+        if (config && config.site_address) document.getElementById('siteAddress').value = config.site_address;
         // Adicionar mais campos conforme necessário
         
     } catch (error) {
