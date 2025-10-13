@@ -187,5 +187,53 @@ module.exports = {
       ordem: 4,
       ativo: true
     }
-  ]
+  ],
+  regulamento: {
+    titulo: 'Regulamento da Feira CEART 2025',
+    subtitulo: 'Feira Cultural de Arte e Artesanato',
+    conteudo: `
+      <h2>Disposições Gerais</h2>
+      <p>A Feira Cultural de Arte e Artesanato - CEART 2025 tem como objetivo promover, valorizar e divulgar o trabalho de artesãos e artistas locais, proporcionando um espaço de comercialização, intercâmbio cultural e preservação das tradições artesanais da nossa região.</p>
+      
+      <h2>Da Participação</h2>
+      <h3>1. Inscrições</h3>
+      <p>Podem participar artesãos e artistas maiores de 18 anos, devidamente inscritos até a data limite estabelecida no cronograma oficial.</p>
+      
+      <h3>2. Categorias</h3>
+      <ul>
+        <li>Artesanato em geral</li>
+        <li>Alimentação artesanal</li>
+        <li>Decoração</li>
+        <li>Vestuário e acessórios</li>
+        <li>Beleza e cosméticos naturais</li>
+        <li>Arte e cultura</li>
+      </ul>
+      
+      <h2>Dos Estandes</h2>
+      <h3>3. Montagem e Desmontagem</h3>
+      <p>Os expositores devem montar seus estandes no dia anterior ao evento, no horário estabelecido pela organização. A desmontagem deve ocorrer após o encerramento, respeitando o horário informado.</p>
+      
+      <h3>4. Estrutura</h3>
+      <p>A organização fornecerá estrutura básica (mesa e cadeira). Decoração adicional e material de exposição são de responsabilidade do expositor.</p>
+      
+      <h2>Das Normas de Conduta</h2>
+      <h3>5. Horário de Funcionamento</h3>
+      <p>Os expositores devem estar presentes durante todo o período de funcionamento da feira.</p>
+      
+      <h3>6. Comercialização</h3>
+      <p>Só é permitida a venda de produtos artesanais de produção própria do expositor.</p>
+      
+      <h3>7. Limpeza e Organização</h3>
+      <p>Cada expositor é responsável pela limpeza e organização de seu espaço.</p>
+      
+      <h2>Disposições Finais</h2>
+      <p>Os casos omissos neste regulamento serão resolvidos pela comissão organizadora. A participação na feira implica na aceitação integral deste regulamento.</p>
+      
+      <p><strong>Data do evento:</strong> 10 a 12 de maio de 2025</p>
+      <p><strong>Local:</strong> Centro de Eventos CEART</p>
+      <p><strong>Horário:</strong> 9h às 18h</p>
+    `,
+    ano: 2025,
+    ativo: true
+  }
 };

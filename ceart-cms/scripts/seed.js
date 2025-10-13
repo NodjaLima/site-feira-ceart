@@ -349,6 +349,19 @@ function insertData() {
       
       console.log(`✅ ${arquivosSeed.length} arquivos inseridos`);
       
+      // Inserir regulamento
+      const regulamentoStmt = db.prepare(`
+        INSERT INTO regulamento (titulo, subtitulo, conteudo, ano, ativo)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      
+      const seedData = require('./seed-data');
+      const reg = seedData.regulamento;
+      regulamentoStmt.run(reg.titulo, reg.subtitulo, reg.conteudo, reg.ano, reg.ativo ? 1 : 0);
+      regulamentoStmt.finalize();
+      
+      console.log(`✅ Regulamento inserido`);
+      
       resolve();
     });
   });

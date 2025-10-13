@@ -212,6 +212,21 @@ db.serialize(() => {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Tabela de regulamento
+  db.run(`
+    CREATE TABLE IF NOT EXISTS regulamento (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      titulo TEXT NOT NULL,
+      subtitulo TEXT,
+      conteudo TEXT NOT NULL,
+      arquivo_pdf TEXT,
+      ano INTEGER,
+      ativo INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 });
 
 // ==================== ROTAS EXPOSITORES ====================
@@ -1364,6 +1379,145 @@ app.post('/api/test-post', (req, res) => {
   });
 });
 
+// ==================== ROTAS REGULAMENTO ====================
+
+// GET - Obter regulamento ativo
+app.get('/api/regulamento', (req, res) => {
+  const query = 'SELECT * FROM regulamento WHERE ativo = 1 ORDER BY ano DESC LIMIT 1';
+  
+  db.get(query, [], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) {
+      return res.status(404).json({ error: 'Nenhum regulamento ativo encontrado' });
+    }
+    res.json(row);
+  });
+});
+
+// GET - Listar todos os regulamentos (para o CMS)
+app.get('/api/regulamentos', (req, res) => {
+  const query = 'SELECT * FROM regulamento ORDER BY ano DESC';
+  
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// GET - Obter regulamento por ID
+app.get('/api/regulamento/:id', (req, res) => {
+  const query = 'SELECT * FROM regulamento WHERE id = ?';
+  
+  db.get(query, [req.params.id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) {
+      return res.status(404).json({ error: 'Regulamento não encontrado' });
+    }
+    res.json(row);
+  });
+});
+
+// POST - Criar novo regulamento
+app.post('/api/regulamento', upload.single('arquivo_pdf'), (req, res) => {
+  const { titulo, subtitulo, conteudo, ano, ativo } = req.body;
+  const arquivo_pdf = req.file ? `/uploads/${req.file.filename}` : null;
+  
+  if (!titulo || !conteudo) {
+    return res.status(400).json({ error: 'Título e conteúdo são obrigatórios' });
+  }
+  
+  const query = `
+    INSERT INTO regulamento (titulo, subtitulo, conteudo, arquivo_pdf, ano, ativo)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  
+  const ativoValue = ativo === 'on' || ativo === '1' || ativo === 1 ? 1 : 0;
+  
+  db.run(query, [titulo, subtitulo, conteudo, arquivo_pdf, ano, ativoValue], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Regulamento criado com sucesso',
+      id: this.lastID
+    });
+  });
+});
+
+// PUT - Atualizar regulamento
+app.put('/api/regulamento/:id', upload.single('arquivo_pdf'), (req, res) => {
+  const { titulo, subtitulo, conteudo, ano, ativo } = req.body;
+  const arquivo_pdf = req.file ? `/uploads/${req.file.filename}` : null;
+  
+  if (!titulo || !conteudo) {
+    return res.status(400).json({ error: 'Título e conteúdo são obrigatórios' });
+  }
+  
+  let query;
+  let params;
+  
+  if (arquivo_pdf) {
+    query = `
+      UPDATE regulamento 
+      SET titulo = ?, subtitulo = ?, conteudo = ?, arquivo_pdf = ?, ano = ?, ativo = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+    const ativoValue = ativo === 'on' || ativo === '1' || ativo === 1 ? 1 : 0;
+    params = [titulo, subtitulo, conteudo, arquivo_pdf, ano, ativoValue, req.params.id];
+  } else {
+    query = `
+      UPDATE regulamento 
+      SET titulo = ?, subtitulo = ?, conteudo = ?, ano = ?, ativo = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+    const ativoValue = ativo === 'on' || ativo === '1' || ativo === 1 ? 1 : 0;
+    params = [titulo, subtitulo, conteudo, ano, ativoValue, req.params.id];
+  }
+  
+  db.run(query, params, function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Regulamento não encontrado' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Regulamento atualizado com sucesso'
+    });
+  });
+});
+
+// DELETE - Excluir regulamento
+app.delete('/api/regulamento/:id', (req, res) => {
+  const query = 'DELETE FROM regulamento WHERE id = ?';
+  
+  db.run(query, [req.params.id], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Regulamento não encontrado' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Regulamento excluído com sucesso'
+    });
+  });
+});
+
 // Rota padrão
 app.get('/', (req, res) => {
   res.json({ 
@@ -1372,10 +1526,11 @@ app.get('/', (req, res) => {
     endpoints: {
       expositores: '/api/expositores',
       posts: '/api/posts',
-      galeria: '/api/galeria',
+      galerias: '/api/galerias',
       carrossel: '/api/carrossel',
       arquivos: '/api/arquivos',
       configuracoes: '/api/configuracoes',
+      regulamento: '/api/regulamento',
       admin: '/admin',
       seed: 'POST /api/seed (requer senha)',
       debug: '/api/debug'

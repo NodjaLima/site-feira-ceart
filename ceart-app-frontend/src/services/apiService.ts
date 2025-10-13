@@ -68,6 +68,19 @@ export interface Configuracao {
   ativo: boolean;
 }
 
+// Interface para Regulamento
+export interface Regulamento {
+  id: number;
+  titulo: string;
+  subtitulo: string;
+  conteudo: string;
+  arquivo_pdf?: string;
+  ano: number;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // Classe para gerenciar chamadas da API
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -197,6 +210,19 @@ class ApiService {
     }
   }
 
+  // Métodos para Regulamento
+  async getRegulamentoAtivo(): Promise<Regulamento> {
+    return this.request<Regulamento>('/regulamento');
+  }
+
+  async getRegulamentos(): Promise<Regulamento[]> {
+    return this.request<Regulamento[]>('/regulamentos');
+  }
+
+  async getRegulamentoById(id: number): Promise<Regulamento> {
+    return this.request<Regulamento>(`/regulamento/${id}`);
+  }
+
   // Método para buscar informações gerais do site
   async getInfoSite() {
     const configuracoes = await this.getConfiguracoes();
@@ -258,5 +284,11 @@ export const useConfiguracoes = () => {
   return {
     getInfoSite: () => apiService.getInfoSite(),
     getConfiguracao: (chave: string) => apiService.getConfiguracao(chave),
+  };
+};
+
+export const useRegulamento = () => {
+  return {
+    getRegulamentoAtivo: () => apiService.getRegulamentoAtivo(),
   };
 };
