@@ -887,7 +887,7 @@ app.get('/admin', (req, res) => {
 });
 
 // Endpoint para rodar seed (apenas em desenvolvimento ou com senha)
-app.post('/api/seed', async (req, res) => {
+app.post('/api/seed', (req, res) => {
   const { password } = req.body;
   const SEED_PASSWORD = process.env.SEED_PASSWORD || 'ceart2025';
   
@@ -895,71 +895,79 @@ app.post('/api/seed', async (req, res) => {
     return res.status(401).json({ error: 'Senha inválida' });
   }
   
-  try {
-    // Usar require inline para pegar dados de seed
-    delete require.cache[require.resolve('./scripts/seed-data.js')];
-    const seedData = require('./scripts/seed-data.js');
-    
-    // Executar tudo em uma única transação para melhor performance
-    await new Promise((resolve, reject) => {
+  // Responder imediatamente e executar seed em background
+  res.json({ 
+    success: true, 
+    message: 'Seed iniciado em background. Aguarde alguns segundos e verifique os dados.'
+  });
+  
+  // Executar seed em background
+  setImmediate(() => {
+    try {
+      // Usar require inline para pegar dados de seed
+      delete require.cache[require.resolve('./scripts/seed-data.js')];
+      const seedData = require('./scripts/seed-data.js');
+      
       db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
+        console.log('Iniciando seed do banco de dados...');
         
         // Limpar tabelas
-        db.run('DELETE FROM expositores');
-        db.run('DELETE FROM posts');
-        db.run('DELETE FROM galeria');
-        db.run('DELETE FROM carrossel');
+        db.run('DELETE FROM expositores', (err) => {
+          if (err) console.error('Erro ao limpar expositores:', err);
+        });
+        db.run('DELETE FROM posts', (err) => {
+          if (err) console.error('Erro ao limpar posts:', err);
+        });
+        db.run('DELETE FROM galeria', (err) => {
+          if (err) console.error('Erro ao limpar galeria:', err);
+        });
+        db.run('DELETE FROM carrossel', (err) => {
+          if (err) console.error('Erro ao limpar carrossel:', err);
+        });
         
         // Inserir expositores
         const stmtExpositores = db.prepare('INSERT INTO expositores (nome, categoria, descricao, contato, telefone, email, site) VALUES (?, ?, ?, ?, ?, ?, ?)');
         seedData.expositores.forEach(exp => {
           const contato = `${exp.cidade} - ${exp.estado}`;
-          stmtExpositores.run(exp.nome, exp.categoria, exp.descricao, contato, exp.telefone, exp.email, exp.instagram);
+          stmtExpositores.run(exp.nome, exp.categoria, exp.descricao, contato, exp.telefone, exp.email, exp.instagram, (err) => {
+            if (err) console.error('Erro ao inserir expositor:', err);
+          });
         });
-        stmtExpositores.finalize();
+        stmtExpositores.finalize(() => {
+          console.log(`✓ ${seedData.expositores.length} expositores inseridos`);
+        });
         
         // Inserir galeria
         if (seedData.galeria && seedData.galeria.length > 0) {
           const stmtGaleria = db.prepare('INSERT INTO galeria (titulo, descricao, categoria, imagem) VALUES (?, ?, ?, ?)');
           seedData.galeria.forEach(item => {
-            stmtGaleria.run(item.titulo, item.descricao, item.categoria, item.imagem);
+            stmtGaleria.run(item.titulo, item.descricao, item.categoria, item.imagem, (err) => {
+              if (err) console.error('Erro ao inserir item da galeria:', err);
+            });
           });
-          stmtGaleria.finalize();
+          stmtGaleria.finalize(() => {
+            console.log(`✓ ${seedData.galeria.length} itens da galeria inseridos`);
+          });
         }
         
         // Inserir posts
         if (seedData.posts && seedData.posts.length > 0) {
           const stmtPosts = db.prepare('INSERT INTO posts (titulo, resumo, conteudo, imagem_destaque, categoria, autor, publicado) VALUES (?, ?, ?, ?, ?, ?, ?)');
           seedData.posts.forEach(post => {
-            stmtPosts.run(post.titulo, post.resumo, post.conteudo, post.imagem_destaque, post.categoria, post.autor, post.publicado ? 1 : 0);
+            stmtPosts.run(post.titulo, post.resumo, post.conteudo, post.imagem_destaque, post.categoria, post.autor, post.publicado ? 1 : 0, (err) => {
+              if (err) console.error('Erro ao inserir post:', err);
+            });
           });
-          stmtPosts.finalize();
+          stmtPosts.finalize(() => {
+            console.log(`✓ ${seedData.posts.length} posts inseridos`);
+            console.log('Seed completo!');
+          });
         }
-        
-        db.run('COMMIT', (err) => {
-          if (err) {
-            db.run('ROLLBACK');
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
       });
-    });
-    
-    res.json({ 
-      success: true, 
-      message: 'Banco populado com sucesso!',
-      inserted: {
-        expositores: seedData.expositores.length,
-        galeria: seedData.galeria?.length || 0,
-        posts: seedData.posts?.length || 0
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    } catch (error) {
+      console.error('Erro no seed:', error);
+    }
+  });
 });
 
 // Endpoint de debug para verificar configuração
