@@ -983,12 +983,61 @@ app.post('/api/seed', (req, res) => {
 // Endpoint de debug para verificar configuração
 app.get('/api/debug', (req, res) => {
   db.get('SELECT COUNT(*) as count FROM expositores', (err, row) => {
-    res.json({
-      database_path: DB_PATH,
-      data_dir: DATA_DIR,
-      uploads_dir: UPLOADS_DIR,
-      expositores_count: row?.count || 0,
-      node_env: process.env.NODE_ENV
+    const expositoresCount = row?.count || 0;
+    
+    db.get('SELECT COUNT(*) as count FROM posts', (err2, row2) => {
+      const postsCount = row2?.count || 0;
+      
+      db.get('SELECT COUNT(*) as count FROM galeria', (err3, row3) => {
+        const galeriaCount = row3?.count || 0;
+        
+        res.json({
+          database_path: DB_PATH,
+          data_dir: DATA_DIR,
+          uploads_dir: UPLOADS_DIR,
+          expositores_count: expositoresCount,
+          posts_count: postsCount,
+          galeria_count: galeriaCount,
+          node_env: process.env.NODE_ENV
+        });
+      });
+    });
+  });
+});
+
+// Endpoint para testar inserção de post
+app.post('/api/test-post', (req, res) => {
+  const { password } = req.body;
+  const SEED_PASSWORD = process.env.SEED_PASSWORD || 'ceart2025';
+  
+  if (password !== SEED_PASSWORD) {
+    return res.status(401).json({ error: 'Senha inválida' });
+  }
+  
+  const testPost = {
+    titulo: 'Post de Teste',
+    resumo: 'Este é um post de teste',
+    conteudo: '<p>Conteúdo de teste</p>',
+    imagem_destaque: 'https://via.placeholder.com/800',
+    categoria: 'Teste',
+    autor: 'Sistema',
+    publicado: 1
+  };
+  
+  const query = `
+    INSERT INTO posts (titulo, resumo, conteudo, imagem_destaque, categoria, autor, publicado)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+  
+  db.run(query, [testPost.titulo, testPost.resumo, testPost.conteudo, testPost.imagem_destaque, testPost.categoria, testPost.autor, testPost.publicado], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Post de teste inserido',
+      id: this.lastID
     });
   });
 });
