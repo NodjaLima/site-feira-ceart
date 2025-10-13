@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getPostById, getRelatedPosts, BlogPost } from '../../data/mockData';
+import { apiService, BlogPost } from '../../services/apiService';
 import './PostPage.css';
 
 const PostPage = () => {
@@ -10,19 +10,31 @@ const PostPage = () => {
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
 
   useEffect(() => {
-    if (!id) return;
-    
-    setLoading(true);
-    
-    // Simula um pequeno atraso para efeitos de carregamento
-    setTimeout(() => {
-      const fetchedPost = getPostById(Number(id));
-      const fetchedRelatedPosts = getRelatedPosts(Number(id), 3);
+    const fetchPost = async () => {
+      if (!id) return;
       
-      setPost(fetchedPost || null);
-      setRelatedPosts(fetchedRelatedPosts);
-      setLoading(false);
-    }, 500);
+      try {
+        setLoading(true);
+        const fetchedPost = await apiService.getPostById(Number(id));
+        setPost(fetchedPost);
+        
+        // Buscar posts relacionados da mesma categoria
+        if (fetchedPost) {
+          const allPosts = await apiService.getPostsPublicados();
+          const related = allPosts
+            .filter(p => p.id !== fetchedPost.id && p.categoria === fetchedPost.categoria)
+            .slice(0, 3);
+          setRelatedPosts(related);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar post:', error);
+        setPost(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
   }, [id]);
 
   if (loading) {
@@ -52,19 +64,18 @@ const PostPage = () => {
             <span className="back-arrow">←</span> Voltar para o Blog
           </Link>
           <div className="post-meta">
-            <span className="post-category">{post.category}</span>
-            <span className="post-date">Publicado em {new Date(post.date).toLocaleDateString('pt-BR')}</span>
-            <span className="post-author">Por {post.author}</span>
-            <span className="post-read-time">{post.readTime} de leitura</span>
+            <span className="post-category">{post.categoria}</span>
+            <span className="post-date">Publicado em {new Date(post.data_publicacao).toLocaleDateString('pt-BR')}</span>
+            <span className="post-author">Por {post.autor}</span>
           </div>
-          <h1 className="post-title">{post.title}</h1>
+          <h1 className="post-title">{post.titulo}</h1>
         </div>
         
         <div className="post-featured-image">
-          <img src={post.image} alt={post.title} />
+          <img src={post.imagem_destaque} alt={post.titulo} />
         </div>
         
-        <div className="post-content" dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div className="post-content" dangerouslySetInnerHTML={{ __html: post.conteudo }} />
         
         <div className="post-share">
           <p>Compartilhe este artigo:</p>
@@ -81,12 +92,12 @@ const PostPage = () => {
             {relatedPosts.map(relatedPost => (
               <Link to={`/blog/post/${relatedPost.id}`} className="related-post-card" key={relatedPost.id}>
                 <div className="related-post-image">
-                  <img src={relatedPost.image} alt={relatedPost.title} />
+                  <img src={relatedPost.imagem_destaque} alt={relatedPost.titulo} />
                 </div>
-                <h4>{relatedPost.title}</h4>
+                <h4>{relatedPost.titulo}</h4>
                 <p className="related-post-meta">
-                  <span>{relatedPost.category}</span>
-                  <span>{relatedPost.readTime}</span>
+                  <span>{relatedPost.categoria}</span>
+                  <span>{new Date(relatedPost.data_publicacao).toLocaleDateString('pt-BR')}</span>
                 </p>
               </Link>
             ))}

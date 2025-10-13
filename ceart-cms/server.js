@@ -947,12 +947,33 @@ app.post('/api/seed', async (req, res) => {
       });
     });
     
+    // Inserir posts
+    const insertedPosts = await new Promise((resolve, reject) => {
+      if (!seedData.posts || seedData.posts.length === 0) {
+        resolve(0);
+        return;
+      }
+      const stmt = db.prepare('INSERT INTO posts (titulo, resumo, conteudo, imagem_destaque, categoria, autor, publicado) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      let count = 0;
+      seedData.posts.forEach(post => {
+        stmt.run(post.titulo, post.resumo, post.conteudo, post.imagem_destaque, post.categoria, post.autor, post.publicado ? 1 : 0, (err) => {
+          if (err) reject(err);
+          count++;
+          if (count === seedData.posts.length) {
+            stmt.finalize();
+            resolve(count);
+          }
+        });
+      });
+    });
+    
     res.json({ 
       success: true, 
       message: 'Banco populado com sucesso!',
       inserted: {
         expositores: insertedExpositores,
-        galeria: insertedGaleria
+        galeria: insertedGaleria,
+        posts: insertedPosts
       }
     });
   } catch (error) {

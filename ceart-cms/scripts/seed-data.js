@@ -99,5 +99,43 @@ module.exports = {
       categoria: 'Escultura',
       imagem: 'https://images.unsplash.com/photo-1544967890-1ad5dbaac10d?w=800'
     }
+  ],
+  posts: [
+    {
+      titulo: 'A Arte do Artesanato Regional',
+      resumo: 'Descubra as técnicas tradicionais que tornam o artesanato regional único e especial.',
+      conteudo: '<p>O artesanato regional representa a identidade cultural de uma comunidade. Cada peça carrega consigo histórias, tradições e técnicas passadas de geração em geração.</p><p>Os artesãos utilizam materiais locais e técnicas ancestrais para criar obras únicas que refletem a alma da região.</p>',
+      imagem_destaque: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800',
+      categoria: 'Artesanato',
+      autor: 'Maria Silva',
+      publicado: true
+    },
+    {
+      titulo: 'Sustentabilidade na Feira',
+      resumo: 'Como a feira promove práticas sustentáveis e o comércio justo.',
+      conteudo: '<p>A sustentabilidade é um dos pilares da nossa feira. Todos os expositores são selecionados considerando suas práticas ambientais e sociais.</p><p>Priorizamos produtos feitos com materiais naturais, reciclados ou de fontes renováveis, além de valorizar o comércio justo.</p>',
+      imagem_destaque: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800',
+      categoria: 'Sustentabilidade',
+      autor: 'João Santos',
+      publicado: true
+    },
+    {
+      titulo: 'Conheça os Artesãos Locais',
+      resumo: 'Histórias inspiradoras dos talentosos artesãos da nossa região.',
+      conteudo: '<p>Cada artesão tem uma história única para contar. Muitos aprenderam o ofício com seus pais e avós, mantendo vivas as tradições familiares.</p><p>Conheça as pessoas por trás das obras e entenda o amor e dedicação presentes em cada criação.</p>',
+      imagem_destaque: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800',
+      categoria: 'Histórias',
+      autor: 'Ana Costa',
+      publicado: true
+    },
+    {
+      titulo: 'Tendências do Artesanato em 2025',
+      resumo: 'As principais tendências que estão moldando o artesanato contemporâneo.',
+      conteudo: '<p>O artesanato moderno une tradição e inovação. Vemos cada vez mais artesãos incorporando design contemporâneo às técnicas ancestrais.</p><p>Materiais sustentáveis, minimalismo e funcionalidade são as principais tendências deste ano.</p>',
+      imagem_destaque: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',
+      categoria: 'Tendências',
+      autor: 'Pedro Oliveira',
+      publicado: true
+    }
   ]
 };
