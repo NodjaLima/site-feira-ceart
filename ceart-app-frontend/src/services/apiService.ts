@@ -15,19 +15,14 @@ export interface Expositor {
   id: number;
   nome: string;
   descricao: string;
-  especialidade: string;
-  foto: string;
-  cidade: string;
-  estado: string;
-  contato_telefone?: string;
-  contato_email?: string;
-  contato_instagram?: string;
-  contato_whatsapp?: string;
-  anos_experiencia: number;
-  biografia: string;
-  produtos: string;
-  destaques: string;
-  ativo: boolean;
+  categoria: string;
+  imagem: string;
+  contato?: string;
+  telefone?: string;
+  email?: string;
+  site?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Interface para Post do Blog
@@ -108,8 +103,7 @@ class ApiService {
   }
 
   async getExpositoresAtivos(): Promise<Expositor[]> {
-    const expositores = await this.getExpositores();
-    return expositores.filter(expositor => expositor.ativo);
+    return this.getExpositores();
   }
 
   async getExpositorById(id: number): Promise<Expositor | null> {

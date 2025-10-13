@@ -6,13 +6,13 @@ import '../styles/Expositores.css';
 const Expositores = () => {
   const [allExpositores, setAllExpositores] = useState<Expositor[]>([]);
   const [expositores, setExpositores] = useState<Expositor[]>([]);
-  const [selectedEspecialidade, setSelectedEspecialidade] = useState<string>('Todas');
+  const [selectedCategoria, setSelectedCategoria] = useState<string>('Todas');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const expositoresPerPage = 6;
 
-  const [especialidades, setEspecialidades] = useState<string[]>(['Todas']);
+  const [categorias, setCategorias] = useState<string[]>(['Todas']);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -22,9 +22,9 @@ const Expositores = () => {
         const expositoresData = await apiService.getExpositoresAtivos();
         setAllExpositores(expositoresData);
         
-        // Extrair especialidades únicas
-        const especialidadesUnicas = ['Todas', ...new Set(expositoresData.map(exp => exp.especialidade))];
-        setEspecialidades(especialidadesUnicas);
+        // Extrair categorias únicas
+        const categoriasUnicas = ['Todas', ...new Set(expositoresData.map(exp => exp.categoria))];
+        setCategorias(categoriasUnicas);
         
       } catch (error) {
         console.error('Erro ao carregar expositores:', error);
@@ -40,9 +40,9 @@ const Expositores = () => {
   useEffect(() => {
     let filteredExpositores = allExpositores;
 
-    // Filtrar por especialidade
-    if (selectedEspecialidade !== 'Todas') {
-      filteredExpositores = allExpositores.filter(exp => exp.especialidade === selectedEspecialidade);
+    // Filtrar por categoria
+    if (selectedCategoria !== 'Todas') {
+      filteredExpositores = allExpositores.filter(exp => exp.categoria === selectedCategoria);
     }
 
     // Filtrar por termo de busca
@@ -50,15 +50,14 @@ const Expositores = () => {
       filteredExpositores = filteredExpositores.filter(expositor =>
         expositor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         expositor.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expositor.especialidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expositor.cidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expositor.produtos.toLowerCase().includes(searchTerm.toLowerCase())
+        expositor.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (expositor.contato && expositor.contato.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
     setExpositores(filteredExpositores);
     setCurrentPage(1);
-  }, [allExpositores, selectedEspecialidade, searchTerm]);
+  }, [allExpositores, selectedCategoria, searchTerm]);
 
   // Paginação
   const indexOfLastExpositor = currentPage * expositoresPerPage;
@@ -72,9 +71,11 @@ const Expositores = () => {
   };
 
   const handleContactClick = (expositor: Expositor) => {
-    if (expositor.contato_whatsapp) {
-      const message = `Olá ${expositor.nome}! Gostaria de saber mais sobre seus produtos artesanais.`;
-      const whatsappUrl = `https://wa.me/55${expositor.contato_whatsapp}?text=${encodeURIComponent(message)}`;
+    if (expositor.telefone) {
+      const message = `Olá ${expositor.nome}! Gostaria de saber mais sobre seus produtos.`;
+      // Remove caracteres não numéricos do telefone
+      const telefone = expositor.telefone.replace(/\D/g, '');
+      const whatsappUrl = `https://wa.me/55${telefone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
     }
   };
@@ -116,13 +117,13 @@ const Expositores = () => {
           </div>
           
           <div className="expositores-especialidades">
-            {especialidades.map((especialidade) => (
+            {categorias.map((categoria) => (
               <button
-                key={especialidade}
-                onClick={() => setSelectedEspecialidade(especialidade)}
-                className={`expositores-especialidade-btn ${selectedEspecialidade === especialidade ? 'active' : ''}`}
+                key={categoria}
+                onClick={() => setSelectedCategoria(categoria)}
+                className={`expositores-especialidade-btn ${selectedCategoria === categoria ? 'active' : ''}`}
               >
-                {especialidade}
+                {categoria}
               </button>
             ))}
           </div>
@@ -140,14 +141,14 @@ const Expositores = () => {
           {currentExpositores.map((expositor) => (
             <div key={expositor.id} className="expositor-card">
               <div className="expositor-foto-container">
-                <img src={expositor.foto} alt={expositor.nome} className="expositor-foto" />
+                <img src={expositor.imagem || '/logo.png'} alt={expositor.nome} className="expositor-foto" />
               </div>
               
               <div className="expositor-content">
                 <div className="expositor-main-info">
                   <h3 className="expositor-nome">{expositor.nome}</h3>
-                  <p className="expositor-localizacao">{expositor.cidade}, {expositor.estado}</p>
-                  <p className="expositor-especialidade-texto">{expositor.especialidade}</p>
+                  {expositor.contato && <p className="expositor-localizacao">{expositor.contato}</p>}
+                  <p className="expositor-especialidade-texto">{expositor.categoria}</p>
                   <p className="expositor-descricao">{expositor.descricao}</p>
                 </div>
                 
@@ -158,13 +159,15 @@ const Expositores = () => {
                   >
                     Ver Perfil
                   </Link>
-                  <button 
-                    onClick={() => handleContactClick(expositor)}
-                    className="expositor-contact-btn"
-                  >
-                    <span className="whatsapp-icon">📱</span>
-                    Contatar
-                  </button>
+                  {expositor.telefone && (
+                    <button 
+                      onClick={() => handleContactClick(expositor)}
+                      className="expositor-contact-btn"
+                    >
+                      <span className="whatsapp-icon">📱</span>
+                      Contatar
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
