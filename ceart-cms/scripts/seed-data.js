@@ -61,5 +61,43 @@ module.exports = {
       email: 'cerveja@example.com',
       instagram: '@cerveja_artesanal'
     }
+  ],
+  galeria: [
+    {
+      titulo: 'Cerâmica Artesanal',
+      descricao: 'Vasos decorativos únicos feitos à mão',
+      categoria: 'Cerâmica',
+      imagem: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800'
+    },
+    {
+      titulo: 'Móveis Rústicos',
+      descricao: 'Móveis artesanais em madeira sustentável',
+      categoria: 'Marcenaria',
+      imagem: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800'
+    },
+    {
+      titulo: 'Tecidos Naturais',
+      descricao: 'Tecidos tingidos com plantas naturais',
+      categoria: 'Têxtil',
+      imagem: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=800'
+    },
+    {
+      titulo: 'Joias Artesanais',
+      descricao: 'Joias únicas com pedras brasileiras',
+      categoria: 'Ourivesaria',
+      imagem: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800'
+    },
+    {
+      titulo: 'Cestas de Fibra',
+      descricao: 'Cestas sustentáveis de fibras naturais',
+      categoria: 'Fibras',
+      imagem: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800'
+    },
+    {
+      titulo: 'Esculturas em Pedra',
+      descricao: 'Arte em pedra sabão mineira',
+      categoria: 'Escultura',
+      imagem: 'https://images.unsplash.com/photo-1544967890-1ad5dbaac10d?w=800'
+    }
   ]
 };

@@ -927,11 +927,32 @@ app.post('/api/seed', async (req, res) => {
       });
     });
     
+    // Inserir galeria
+    const insertedGaleria = await new Promise((resolve, reject) => {
+      if (!seedData.galeria || seedData.galeria.length === 0) {
+        resolve(0);
+        return;
+      }
+      const stmt = db.prepare('INSERT INTO galeria (titulo, descricao, categoria, imagem) VALUES (?, ?, ?, ?)');
+      let count = 0;
+      seedData.galeria.forEach(item => {
+        stmt.run(item.titulo, item.descricao, item.categoria, item.imagem, (err) => {
+          if (err) reject(err);
+          count++;
+          if (count === seedData.galeria.length) {
+            stmt.finalize();
+            resolve(count);
+          }
+        });
+      });
+    });
+    
     res.json({ 
       success: true, 
       message: 'Banco populado com sucesso!',
       inserted: {
-        expositores: insertedExpositores
+        expositores: insertedExpositores,
+        galeria: insertedGaleria
       }
     });
   } catch (error) {
