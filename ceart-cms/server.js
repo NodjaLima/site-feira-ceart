@@ -959,27 +959,17 @@ app.post('/api/seed', (req, res) => {
         }
         
         // Inserir posts
-        console.log('seedData.posts exists:', !!seedData.posts);
-        console.log('seedData.posts length:', seedData.posts?.length);
         if (seedData.posts && seedData.posts.length > 0) {
-          console.log('Preparando para inserir posts...');
           const stmtPosts = db.prepare('INSERT INTO posts (titulo, resumo, conteudo, imagem_destaque, categoria, autor, publicado) VALUES (?, ?, ?, ?, ?, ?, ?)');
-          seedData.posts.forEach((post, index) => {
-            console.log(`Inserindo post ${index + 1}: ${post.titulo}`);
+          seedData.posts.forEach(post => {
             stmtPosts.run(post.titulo, post.resumo, post.conteudo, post.imagem_destaque, post.categoria, post.autor, post.publicado ? 1 : 0, (err) => {
-              if (err) console.error(`Erro ao inserir post ${index + 1}:`, err);
-              else console.log(`✓ Post ${index + 1} inserido com sucesso`);
+              if (err) console.error('Erro ao inserir post:', err);
             });
           });
-          stmtPosts.finalize((err) => {
-            if (err) console.error('Erro ao finalizar posts:', err);
-            else {
-              console.log(`✓ ${seedData.posts.length} posts inseridos`);
-              console.log('Seed completo!');
-            }
+          stmtPosts.finalize(() => {
+            console.log(`✓ ${seedData.posts.length} posts inseridos`);
+            console.log('Seed completo!');
           });
-        } else {
-          console.log('Nenhum post para inserir');
         }
       });
     } catch (error) {
