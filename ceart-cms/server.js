@@ -1013,6 +1013,60 @@ app.get('/api/debug', (req, res) => {
   });
 });
 
+// Endpoint para migrar a tabela posts
+app.post('/api/migrate-posts', (req, res) => {
+  const { password } = req.body;
+  const SEED_PASSWORD = process.env.SEED_PASSWORD || 'ceart2025';
+  
+  if (password !== SEED_PASSWORD) {
+    return res.status(401).json({ error: 'Senha inválida' });
+  }
+  
+  db.serialize(() => {
+    // Renomear a tabela antiga
+    db.run('ALTER TABLE posts RENAME TO posts_old', (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Erro ao renomear tabela: ' + err.message });
+      }
+      
+      // Criar nova tabela com estrutura correta
+      db.run(`
+        CREATE TABLE posts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          titulo TEXT NOT NULL,
+          resumo TEXT,
+          conteudo TEXT NOT NULL,
+          imagem_destaque TEXT,
+          categoria TEXT,
+          autor TEXT,
+          publicado INTEGER DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `, (err2) => {
+        if (err2) {
+          return res.status(500).json({ error: 'Erro ao criar nova tabela: ' + err2.message });
+        }
+        
+        // Copiar dados (se houver) da tabela antiga para a nova
+        db.run(`
+          INSERT INTO posts (id, titulo, resumo, conteudo, imagem_destaque, categoria, autor, publicado, created_at, updated_at)
+          SELECT id, titulo, excerpt as resumo, conteudo, imagem as imagem_destaque, categoria, autor, 1 as publicado, created_at, updated_at
+          FROM posts_old
+        `, (err3) => {
+          // Remover tabela antiga
+          db.run('DROP TABLE posts_old', () => {
+            res.json({ 
+              success: true, 
+              message: 'Migração da tabela posts concluída com sucesso!'
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
 // Endpoint para testar inserção de post
 app.post('/api/test-post', (req, res) => {
   const { password } = req.body;
