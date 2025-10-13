@@ -77,6 +77,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production', // HTTPS em produção
     httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Permitir cross-site em produção
     maxAge: 24 * 60 * 60 * 1000 // 24 horas
   }
 }));
@@ -371,14 +372,23 @@ app.post('/api/auth/login', async (req, res) => {
           req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
         }
         
-        res.json({
-          success: true,
-          user: {
-            id: user.id,
-            username: user.username,
-            name: user.name,
-            role: user.role
+        // Salvar sessão antes de responder
+        req.session.save((err) => {
+          if (err) {
+            console.error('Erro ao salvar sessão:', err);
+            return res.status(500).json({ error: 'Erro ao salvar sessão' });
           }
+          
+          console.log('✅ Login bem-sucedido:', user.username);
+          res.json({
+            success: true,
+            user: {
+              id: user.id,
+              username: user.username,
+              name: user.name,
+              role: user.role
+            }
+          });
         });
       }
     );
