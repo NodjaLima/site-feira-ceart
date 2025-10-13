@@ -257,14 +257,17 @@ function insertData() {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
       // Limpar tabelas existentes
-      db.run('DELETE FROM expositores');
+      db.run('DELETE FROM expositores', (err) => {
+        if (err) console.error('Erro ao limpar expositores:', err);
+        else console.log('✅ Expositores limpos');
+      });
       db.run('DELETE FROM posts');
       db.run('DELETE FROM configuracoes');
       db.run('DELETE FROM galeria');
       db.run('DELETE FROM carrossel');
       db.run('DELETE FROM arquivos');
       
-      console.log('🗑️  Tabelas limpas');
+      console.log('🗑️  Limpando tabelas...');
       
       // Inserir expositores
       const expositorStmt = db.prepare(`

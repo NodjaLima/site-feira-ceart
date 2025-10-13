@@ -896,10 +896,14 @@ app.post('/api/seed', (req, res) => {
   // Executar seed
   const { execSync } = require('child_process');
   try {
-    execSync('node scripts/seed.js', { cwd: __dirname });
-    res.json({ success: true, message: 'Banco populado com sucesso!' });
+    const output = execSync('node scripts/seed.js', { 
+      cwd: __dirname,
+      env: process.env, // Passar variáveis de ambiente
+      encoding: 'utf8'
+    });
+    res.json({ success: true, message: 'Banco populado com sucesso!', output });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message, stderr: error.stderr?.toString() });
   }
 });
 
