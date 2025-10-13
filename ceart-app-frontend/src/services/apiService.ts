@@ -97,9 +97,22 @@ class ApiService {
     return items.filter(item => item.ativo).sort((a, b) => a.ordem - b.ordem);
   }
 
+  // Helper para completar URLs de imagem
+  private getFullImageUrl(imagePath: string | null): string {
+    if (!imagePath) return '/logo.png';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `https://site-feira-ceart-production.up.railway.app${imagePath}`;
+  }
+
   // Métodos para Expositores
   async getExpositores(): Promise<Expositor[]> {
-    return this.request<Expositor[]>('/expositores');
+    const expositores = await this.request<Expositor[]>('/expositores');
+    console.log('Expositores carregados:', expositores);
+    // Completar URLs das imagens
+    return expositores.map(exp => ({
+      ...exp,
+      imagem: this.getFullImageUrl(exp.imagem)
+    }));
   }
 
   async getExpositoresAtivos(): Promise<Expositor[]> {

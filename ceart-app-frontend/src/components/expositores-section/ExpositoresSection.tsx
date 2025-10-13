@@ -44,7 +44,7 @@ const ExpositoresSection = () => {
             <div key={expositor.id} className="home-expositor-card">
               <div className="home-expositor-foto-container">
                 <img
-                  src={expositor.foto}
+                  src={expositor.imagem}
                   alt={expositor.nome}
                   className="home-expositor-foto"
                 />
@@ -52,8 +52,8 @@ const ExpositoresSection = () => {
               
               <div className="home-expositor-info">
                 <h3 className="home-expositor-nome">{expositor.nome}</h3>
-                {expositor.cidade && (
-                  <p className="home-expositor-cidade">{expositor.cidade}, {expositor.estado}</p>
+                {expositor.contato && (
+                  <p className="home-expositor-cidade">{expositor.contato}</p>
                 )}
                 <p className="home-expositor-descricao">{expositor.descricao}</p>
                 
