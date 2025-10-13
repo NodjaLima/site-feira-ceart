@@ -11,7 +11,7 @@ console.log('🌱 Iniciando seed do banco de dados CEART CMS...');
 const expositoresSeed = [
   {
     nome: 'Maria Silva Santos',
-    especialidade: 'Cerâmica',
+    categoria: 'Cerâmica',
     cidade: 'São Paulo',
     estado: 'SP',
     telefone: '(11) 98765-4321',
@@ -21,7 +21,7 @@ const expositoresSeed = [
   },
   {
     nome: 'João Santos Oliveira',
-    especialidade: 'Marcenaria',
+    categoria: 'Marcenaria',
     cidade: 'Ouro Preto',
     estado: 'MG',
     telefone: '(31) 99887-6654',
@@ -31,7 +31,7 @@ const expositoresSeed = [
   },
   {
     nome: 'Ana Costa Ferreira',
-    especialidade: 'Têxtil',
+    categoria: 'Têxtil',
     cidade: 'Salvador',
     estado: 'BA',
     telefone: '(71) 97654-3210',
@@ -41,7 +41,7 @@ const expositoresSeed = [
   },
   {
     nome: 'Pedro Lima Costa',
-    especialidade: 'Ourivesaria',
+    categoria: 'Ourivesaria',
     cidade: 'Belo Horizonte',
     estado: 'MG',
     telefone: '(31) 98765-1234',
@@ -51,7 +51,7 @@ const expositoresSeed = [
   },
   {
     nome: 'Carla Mendes Ribeiro',
-    especialidade: 'Fibras',
+    categoria: 'Fibras',
     cidade: 'Petrolina',
     estado: 'PE',
     telefone: '(87) 96543-2109',
@@ -61,7 +61,7 @@ const expositoresSeed = [
   },
   {
     nome: 'Roberto Silva Medeiros',
-    especialidade: 'Escultura',
+    categoria: 'Escultura',
     cidade: 'Congonhas',
     estado: 'MG',
     telefone: '(31) 95432-1098',
@@ -265,13 +265,14 @@ function insertData() {
       
       // Inserir expositores
       const expositorStmt = db.prepare(`
-        INSERT INTO expositores (nome, especialidade, cidade, estado, telefone, email, instagram, descricao)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO expositores (nome, categoria, descricao, contato, telefone, email, site)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
       
       expositoresSeed.forEach(exp => {
-        expositorStmt.run(exp.nome, exp.especialidade, exp.cidade, exp.estado, 
-                          exp.telefone, exp.email, exp.instagram, exp.descricao);
+        const contato = `${exp.cidade} - ${exp.estado}`;
+        expositorStmt.run(exp.nome, exp.categoria, exp.descricao, contato, 
+                          exp.telefone, exp.email, exp.instagram);
       });
       expositorStmt.finalize();
       
