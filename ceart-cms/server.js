@@ -15,15 +15,25 @@ const allowedOrigins = [
   'http://localhost:3000',
   process.env.FRONTEND_URL, // URL do frontend no Vercel
   /https:\/\/.*\.vercel\.app$/, // Permite preview deploys
+  /https:\/\/.*\.railway\.app$/, // Permite Railway (para admin)
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.some(allowed => 
+    // Permitir requisições sem origin (mesma origem, curl, postman)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Verificar se origin está na lista de permitidos
+    const isAllowed = allowedOrigins.some(allowed => 
       allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
-    )) {
+    );
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
