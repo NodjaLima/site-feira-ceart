@@ -137,5 +137,31 @@ module.exports = {
       autor: 'Pedro Oliveira',
       publicado: true
     }
+  ],
+  carrossel: [
+    {
+      titulo: 'Feira CEART 2025',
+      imagem: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200',
+      ordem: 1,
+      ativo: true
+    },
+    {
+      titulo: 'Artesanato Regional',
+      imagem: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200',
+      ordem: 2,
+      ativo: true
+    },
+    {
+      titulo: 'Sustentabilidade e Arte',
+      imagem: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1200',
+      ordem: 3,
+      ativo: true
+    },
+    {
+      titulo: 'Cultura e Tradição',
+      imagem: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1200',
+      ordem: 4,
+      ativo: true
+    }
   ]
 };

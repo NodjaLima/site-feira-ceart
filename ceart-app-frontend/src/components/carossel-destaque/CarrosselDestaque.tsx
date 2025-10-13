@@ -1,27 +1,38 @@
 import { useState, useEffect } from "react";
 import "./CarrosselDestaque.css";
-
-// Dados estáticos para teste
-const STATIC_CAROUSEL_DATA = [
-  { 
-    id: 1, 
-    titulo: "Feira CEART 2025", 
-    imagem: "/logo.png", 
-    ordem: 1, 
-    ativo: true 
-  },
-  { 
-    id: 2, 
-    titulo: "Arte e Cultura", 
-    imagem: "/vite.svg", 
-    ordem: 2, 
-    ativo: true 
-  }
-];
+import { apiService, CarrosselItem } from "../../services/apiService";
 
 const CarrosselDestaque = () => {
-  const [carrosselItems] = useState(STATIC_CAROUSEL_DATA);
+  const [carrosselItems, setCarrosselItems] = useState<CarrosselItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Buscar dados do carrossel da API
+  useEffect(() => {
+    const fetchCarrossel = async () => {
+      try {
+        setLoading(true);
+        const data = await apiService.getCarrosselAtivo();
+        setCarrosselItems(data);
+      } catch (err) {
+        console.error('Erro ao carregar carrossel:', err);
+        // Fallback para dados estáticos
+        setCarrosselItems([
+          { 
+            id: 1, 
+            titulo: "Feira CEART 2025", 
+            imagem: "/logo.png", 
+            ordem: 1, 
+            ativo: true 
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCarrossel();
+  }, []);
 
   // Auto-advance slides
   useEffect(() => {
@@ -54,6 +65,24 @@ const CarrosselDestaque = () => {
     console.log('Erro ao carregar imagem:', img.src);
     img.src = '/logo.png'; // Fallback para logo
   };
+
+  if (loading) {
+    return (
+      <div className="carrossel-container">
+        <div className="carrossel-slide active">
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '400px',
+            color: '#666'
+          }}>
+            Carregando...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (carrosselItems.length === 0) {
     return (

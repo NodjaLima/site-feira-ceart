@@ -968,6 +968,19 @@ app.post('/api/seed', (req, res) => {
           });
           stmtPosts.finalize(() => {
             console.log(`✓ ${seedData.posts.length} posts inseridos`);
+          });
+        }
+        
+        // Inserir carrossel
+        if (seedData.carrossel && seedData.carrossel.length > 0) {
+          const stmtCarrossel = db.prepare('INSERT INTO carrossel (titulo, imagem, ordem, ativo) VALUES (?, ?, ?, ?)');
+          seedData.carrossel.forEach(item => {
+            stmtCarrossel.run(item.titulo, item.imagem, item.ordem, item.ativo ? 1 : 0, (err) => {
+              if (err) console.error('Erro ao inserir item do carrossel:', err);
+            });
+          });
+          stmtCarrossel.finalize(() => {
+            console.log(`✓ ${seedData.carrossel.length} itens do carrossel inseridos`);
             console.log('Seed completo!');
           });
         }
@@ -989,14 +1002,19 @@ app.get('/api/debug', (req, res) => {
       db.get('SELECT COUNT(*) as count FROM galeria', (err3, row3) => {
         const galeriaCount = row3?.count || 0;
         
-        res.json({
-          database_path: DB_PATH,
-          data_dir: DATA_DIR,
-          uploads_dir: UPLOADS_DIR,
-          expositores_count: expositoresCount,
-          posts_count: postsCount,
-          galeria_count: galeriaCount,
-          node_env: process.env.NODE_ENV
+        db.get('SELECT COUNT(*) as count FROM carrossel', (err4, row4) => {
+          const carrosselCount = row4?.count || 0;
+          
+          res.json({
+            database_path: DB_PATH,
+            data_dir: DATA_DIR,
+            uploads_dir: UPLOADS_DIR,
+            expositores_count: expositoresCount,
+            posts_count: postsCount,
+            galeria_count: galeriaCount,
+            carrossel_count: carrosselCount,
+            node_env: process.env.NODE_ENV
+          });
         });
       });
     });
