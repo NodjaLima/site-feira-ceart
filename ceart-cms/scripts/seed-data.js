@@ -62,42 +62,66 @@ module.exports = {
       instagram: '@cerveja_artesanal'
     }
   ],
-  galeria: [
+  galerias: [
     {
+      titulo: 'Feira CEART 2025',
+      descricao: 'Fotos da edição 2025 da Feira CEART',
+      data_evento: '2025-03-15',
+      ativo: true,
+      ordem: 1
+    },
+    {
+      titulo: 'Feira CEART 2024',
+      descricao: 'Fotos da edição 2024 da Feira CEART',
+      data_evento: '2024-03-20',
+      ativo: true,
+      ordem: 2
+    }
+  ],
+  galeriaItens: [
+    // Itens da Feira 2025 (galeria_id: 1)
+    {
+      galeria_id: 1,
       titulo: 'Cerâmica Artesanal',
       descricao: 'Vasos decorativos únicos feitos à mão',
-      categoria: 'Cerâmica',
-      imagem: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800'
+      imagem: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800',
+      ordem: 1
     },
     {
+      galeria_id: 1,
       titulo: 'Móveis Rústicos',
       descricao: 'Móveis artesanais em madeira sustentável',
-      categoria: 'Marcenaria',
-      imagem: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800'
+      imagem: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',
+      ordem: 2
     },
     {
+      galeria_id: 1,
       titulo: 'Tecidos Naturais',
       descricao: 'Tecidos tingidos com plantas naturais',
-      categoria: 'Têxtil',
-      imagem: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=800'
+      imagem: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=800',
+      ordem: 3
     },
     {
+      galeria_id: 1,
       titulo: 'Joias Artesanais',
       descricao: 'Joias únicas com pedras brasileiras',
-      categoria: 'Ourivesaria',
-      imagem: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800'
+      imagem: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800',
+      ordem: 4
     },
+    // Itens da Feira 2024 (galeria_id: 2)
     {
+      galeria_id: 2,
       titulo: 'Cestas de Fibra',
       descricao: 'Cestas sustentáveis de fibras naturais',
-      categoria: 'Fibras',
-      imagem: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800'
+      imagem: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800',
+      ordem: 1
     },
     {
+      galeria_id: 2,
       titulo: 'Esculturas em Pedra',
       descricao: 'Arte em pedra sabão mineira',
-      categoria: 'Escultura',
-      imagem: 'https://images.unsplash.com/photo-1544967890-1ad5dbaac10d?w=800'
+      imagem: 'https://images.unsplash.com/photo-1544967890-1ad5dbaac10d?w=800',
+      ordem: 2
     }
   ],
   posts: [

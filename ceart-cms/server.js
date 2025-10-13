@@ -144,16 +144,32 @@ db.serialize(() => {
     )
   `);
 
-  // Tabela da galeria
+  // Tabela de galerias (coleções/edições)
   db.run(`
-    CREATE TABLE IF NOT EXISTS galeria (
+    CREATE TABLE IF NOT EXISTS galerias (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       titulo TEXT NOT NULL,
       descricao TEXT,
-      imagem TEXT NOT NULL,
-      categoria TEXT,
+      data_evento TEXT,
+      ativo BOOLEAN DEFAULT 1,
+      ordem INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Tabela de itens da galeria (fotos)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS galeria_itens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      galeria_id INTEGER NOT NULL,
+      titulo TEXT,
+      descricao TEXT,
+      imagem TEXT NOT NULL,
+      ordem INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (galeria_id) REFERENCES galerias(id) ON DELETE CASCADE
     )
   `);
 
@@ -434,11 +450,11 @@ app.delete('/api/posts/:id', (req, res) => {
   });
 });
 
-// ==================== ROTAS GALERIA ====================
+// ==================== ROTAS GALERIAS (COLEÇÕES) ====================
 
-// GET - Listar imagens da galeria
-app.get('/api/galeria', (req, res) => {
-  db.all('SELECT * FROM galeria ORDER BY created_at DESC', (err, rows) => {
+// GET - Listar galerias
+app.get('/api/galerias', (req, res) => {
+  db.all('SELECT * FROM galerias ORDER BY ordem, created_at DESC', (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -446,39 +462,43 @@ app.get('/api/galeria', (req, res) => {
   });
 });
 
-// GET - Buscar imagem da galeria por ID
-app.get('/api/galeria/:id', (req, res) => {
+// GET - Listar galerias ativas
+app.get('/api/galerias/ativas', (req, res) => {
+  db.all('SELECT * FROM galerias WHERE ativo = 1 ORDER BY ordem, created_at DESC', (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// GET - Buscar galeria por ID
+app.get('/api/galerias/:id', (req, res) => {
   const { id } = req.params;
   
-  db.get('SELECT * FROM galeria WHERE id = ?', [id], (err, row) => {
+  db.get('SELECT * FROM galerias WHERE id = ?', [id], (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
     
     if (!row) {
-      return res.status(404).json({ error: 'Imagem não encontrada' });
+      return res.status(404).json({ error: 'Galeria não encontrada' });
     }
     
     res.json(row);
   });
 });
 
-// POST - Adicionar imagem à galeria
-app.post('/api/galeria', upload.single('imagem'), (req, res) => {
-  const { titulo, descricao, categoria } = req.body;
-  
-  if (!req.file) {
-    return res.status(400).json({ error: 'Imagem é obrigatória' });
-  }
-  
-  const imagem = `/uploads/${req.file.filename}`;
+// POST - Criar galeria
+app.post('/api/galerias', (req, res) => {
+  const { titulo, descricao, data_evento, ativo, ordem } = req.body;
   
   const query = `
-    INSERT INTO galeria (titulo, descricao, imagem, categoria)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO galerias (titulo, descricao, data_evento, ativo, ordem)
+    VALUES (?, ?, ?, ?, ?)
   `;
   
-  db.run(query, [titulo, descricao, imagem, categoria], function(err) {
+  db.run(query, [titulo, descricao, data_evento, ativo !== undefined ? ativo : 1, ordem || 0], function(err) {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -486,31 +506,145 @@ app.post('/api/galeria', upload.single('imagem'), (req, res) => {
     res.json({ 
       success: true, 
       id: this.lastID,
-      message: 'Imagem adicionada à galeria com sucesso!' 
+      message: 'Galeria criada com sucesso!' 
     });
   });
 });
 
-// PUT - Atualizar imagem da galeria
-app.put('/api/galeria/:id', upload.single('imagem'), (req, res) => {
+// PUT - Atualizar galeria
+app.put('/api/galerias/:id', (req, res) => {
   const { id } = req.params;
-  const { titulo, descricao, categoria } = req.body;
+  const { titulo, descricao, data_evento, ativo, ordem } = req.body;
   
-  let query = `
-    UPDATE galeria 
-    SET titulo = ?, descricao = ?, categoria = ?, updated_at = CURRENT_TIMESTAMP
+  const query = `
+    UPDATE galerias 
+    SET titulo = ?, descricao = ?, data_evento = ?, ativo = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `;
-  let params = [titulo, descricao, categoria, id];
+  
+  db.run(query, [titulo, descricao, data_evento, ativo !== undefined ? ativo : 1, ordem || 0, id], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Galeria não encontrada' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Galeria atualizada com sucesso!' 
+    });
+  });
+});
+
+// DELETE - Excluir galeria
+app.delete('/api/galerias/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.run('DELETE FROM galerias WHERE id = ?', [id], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Galeria não encontrada' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Galeria excluída com sucesso!' 
+    });
+  });
+});
+
+// ==================== ROTAS GALERIA ITENS (FOTOS) ====================
+
+// GET - Listar itens de uma galeria
+app.get('/api/galerias/:galeriaId/itens', (req, res) => {
+  const { galeriaId } = req.params;
+  
+  db.all('SELECT * FROM galeria_itens WHERE galeria_id = ? ORDER BY ordem', [galeriaId], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// GET - Buscar item específico
+app.get('/api/galeria-itens/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.get('SELECT * FROM galeria_itens WHERE id = ?', [id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!row) {
+      return res.status(404).json({ error: 'Item não encontrado' });
+    }
+    
+    res.json(row);
+  });
+});
+
+// POST - Adicionar item à galeria
+app.post('/api/galerias/:galeriaId/itens', upload.single('imagem'), (req, res) => {
+  const { galeriaId } = req.params;
+  const { titulo, descricao, ordem } = req.body;
+  
+  const imagem = req.file ? `/uploads/${req.file.filename}` : req.body.imagem;
+  
+  if (!imagem) {
+    return res.status(400).json({ error: 'Imagem é obrigatória' });
+  }
+  
+  const query = `
+    INSERT INTO galeria_itens (galeria_id, titulo, descricao, imagem, ordem)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  
+  db.run(query, [galeriaId, titulo, descricao, imagem, ordem || 0], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    res.json({ 
+      success: true, 
+      id: this.lastID,
+      message: 'Item adicionado à galeria com sucesso!' 
+    });
+  });
+});
+
+// PUT - Atualizar item da galeria
+app.put('/api/galeria-itens/:id', upload.single('imagem'), (req, res) => {
+  const { id } = req.params;
+  const { titulo, descricao, ordem } = req.body;
+  
+  let query = `
+    UPDATE galeria_itens 
+    SET titulo = ?, descricao = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `;
+  let params = [titulo, descricao, ordem || 0, id];
   
   if (req.file) {
     const imagem = `/uploads/${req.file.filename}`;
     query = `
-      UPDATE galeria 
-      SET titulo = ?, descricao = ?, categoria = ?, imagem = ?, updated_at = CURRENT_TIMESTAMP
+      UPDATE galeria_itens 
+      SET titulo = ?, descricao = ?, imagem = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    params = [titulo, descricao, categoria, imagem, id];
+    params = [titulo, descricao, imagem, ordem || 0, id];
+  } else if (req.body.imagem) {
+    query = `
+      UPDATE galeria_itens 
+      SET titulo = ?, descricao = ?, imagem = ?, ordem = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+    params = [titulo, descricao, req.body.imagem, ordem || 0, id];
   }
   
   db.run(query, params, function(err) {
@@ -519,32 +653,32 @@ app.put('/api/galeria/:id', upload.single('imagem'), (req, res) => {
     }
     
     if (this.changes === 0) {
-      return res.status(404).json({ error: 'Imagem não encontrada' });
+      return res.status(404).json({ error: 'Item não encontrado' });
     }
     
     res.json({ 
       success: true, 
-      message: 'Imagem da galeria atualizada com sucesso!' 
+      message: 'Item atualizado com sucesso!' 
     });
   });
 });
 
-// DELETE - Excluir imagem da galeria
-app.delete('/api/galeria/:id', (req, res) => {
+// DELETE - Excluir item da galeria
+app.delete('/api/galeria-itens/:id', (req, res) => {
   const { id } = req.params;
   
-  db.run('DELETE FROM galeria WHERE id = ?', [id], function(err) {
+  db.run('DELETE FROM galeria_itens WHERE id = ?', [id], function(err) {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
     
     if (this.changes === 0) {
-      return res.status(404).json({ error: 'Imagem não encontrada' });
+      return res.status(404).json({ error: 'Item não encontrado' });
     }
     
     res.json({ 
       success: true, 
-      message: 'Imagem excluída da galeria com sucesso!' 
+      message: 'Item excluído da galeria com sucesso!' 
     });
   });
 });
@@ -926,8 +1060,11 @@ app.post('/api/seed', (req, res) => {
         db.run('DELETE FROM posts', (err) => {
           if (err) console.error('Erro ao limpar posts:', err);
         });
-        db.run('DELETE FROM galeria', (err) => {
-          if (err) console.error('Erro ao limpar galeria:', err);
+        db.run('DELETE FROM galeria_itens', (err) => {
+          if (err) console.error('Erro ao limpar galeria_itens:', err);
+        });
+        db.run('DELETE FROM galerias', (err) => {
+          if (err) console.error('Erro ao limpar galerias:', err);
         });
         db.run('DELETE FROM carrossel', (err) => {
           if (err) console.error('Erro ao limpar carrossel:', err);
@@ -945,16 +1082,29 @@ app.post('/api/seed', (req, res) => {
           console.log(`✓ ${seedData.expositores.length} expositores inseridos`);
         });
         
-        // Inserir galeria
-        if (seedData.galeria && seedData.galeria.length > 0) {
-          const stmtGaleria = db.prepare('INSERT INTO galeria (titulo, descricao, categoria, imagem) VALUES (?, ?, ?, ?)');
-          seedData.galeria.forEach(item => {
-            stmtGaleria.run(item.titulo, item.descricao, item.categoria, item.imagem, (err) => {
+        // Inserir galerias (coleções)
+        if (seedData.galerias && seedData.galerias.length > 0) {
+          const stmtGalerias = db.prepare('INSERT INTO galerias (titulo, descricao, data_evento, ativo, ordem) VALUES (?, ?, ?, ?, ?)');
+          seedData.galerias.forEach(galeria => {
+            stmtGalerias.run(galeria.titulo, galeria.descricao, galeria.data_evento, galeria.ativo ? 1 : 0, galeria.ordem, (err) => {
+              if (err) console.error('Erro ao inserir galeria:', err);
+            });
+          });
+          stmtGalerias.finalize(() => {
+            console.log(`✓ ${seedData.galerias.length} galerias inseridas`);
+          });
+        }
+        
+        // Inserir itens da galeria (fotos)
+        if (seedData.galeriaItens && seedData.galeriaItens.length > 0) {
+          const stmtItens = db.prepare('INSERT INTO galeria_itens (galeria_id, titulo, descricao, imagem, ordem) VALUES (?, ?, ?, ?, ?)');
+          seedData.galeriaItens.forEach(item => {
+            stmtItens.run(item.galeria_id, item.titulo, item.descricao, item.imagem, item.ordem, (err) => {
               if (err) console.error('Erro ao inserir item da galeria:', err);
             });
           });
-          stmtGaleria.finalize(() => {
-            console.log(`✓ ${seedData.galeria.length} itens da galeria inseridos`);
+          stmtItens.finalize(() => {
+            console.log(`✓ ${seedData.galeriaItens.length} itens da galeria inseridos`);
           });
         }
         
@@ -999,21 +1149,26 @@ app.get('/api/debug', (req, res) => {
     db.get('SELECT COUNT(*) as count FROM posts', (err2, row2) => {
       const postsCount = row2?.count || 0;
       
-      db.get('SELECT COUNT(*) as count FROM galeria', (err3, row3) => {
-        const galeriaCount = row3?.count || 0;
+      db.get('SELECT COUNT(*) as count FROM galerias', (err3, row3) => {
+        const galeriasCount = row3?.count || 0;
         
-        db.get('SELECT COUNT(*) as count FROM carrossel', (err4, row4) => {
-          const carrosselCount = row4?.count || 0;
+        db.get('SELECT COUNT(*) as count FROM galeria_itens', (err4, row4) => {
+          const galeriaItensCount = row4?.count || 0;
           
-          res.json({
-            database_path: DB_PATH,
-            data_dir: DATA_DIR,
-            uploads_dir: UPLOADS_DIR,
-            expositores_count: expositoresCount,
-            posts_count: postsCount,
-            galeria_count: galeriaCount,
-            carrossel_count: carrosselCount,
-            node_env: process.env.NODE_ENV
+          db.get('SELECT COUNT(*) as count FROM carrossel', (err5, row5) => {
+            const carrosselCount = row5?.count || 0;
+            
+            res.json({
+              database_path: DB_PATH,
+              data_dir: DATA_DIR,
+              uploads_dir: UPLOADS_DIR,
+              expositores_count: expositoresCount,
+              posts_count: postsCount,
+              galerias_count: galeriasCount,
+              galeria_itens_count: galeriaItensCount,
+              carrossel_count: carrosselCount,
+              node_env: process.env.NODE_ENV
+            });
           });
         });
       });
@@ -1067,6 +1222,103 @@ app.post('/api/migrate-posts', (req, res) => {
             res.json({ 
               success: true, 
               message: 'Migração da tabela posts concluída com sucesso!'
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+// Endpoint para migrar estrutura de galerias
+app.post('/api/migrate-galerias', (req, res) => {
+  const { password } = req.body;
+  const SEED_PASSWORD = process.env.SEED_PASSWORD || 'ceart2025';
+  
+  if (password !== SEED_PASSWORD) {
+    return res.status(401).json({ error: 'Senha inválida' });
+  }
+  
+  db.serialize(() => {
+    // Verificar se a tabela antiga existe
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='galeria'", (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: 'Erro ao verificar tabela: ' + err.message });
+      }
+      
+      if (!row) {
+        return res.json({ 
+          success: true, 
+          message: 'Tabela galeria não existe, estrutura nova já está em uso!'
+        });
+      }
+      
+      // Renomear tabela antiga
+      db.run('ALTER TABLE galeria RENAME TO galeria_old', (err2) => {
+        if (err2) {
+          return res.status(500).json({ error: 'Erro ao renomear tabela: ' + err2.message });
+        }
+        
+        // Criar tabela galerias (coleções)
+        db.run(`
+          CREATE TABLE galerias (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo TEXT NOT NULL,
+            descricao TEXT,
+            data_evento TEXT,
+            ativo BOOLEAN DEFAULT 1,
+            ordem INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `, (err3) => {
+          if (err3) {
+            return res.status(500).json({ error: 'Erro ao criar tabela galerias: ' + err3.message });
+          }
+          
+          // Criar tabela galeria_itens
+          db.run(`
+            CREATE TABLE galeria_itens (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              galeria_id INTEGER NOT NULL,
+              titulo TEXT,
+              descricao TEXT,
+              imagem TEXT NOT NULL,
+              ordem INTEGER DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (galeria_id) REFERENCES galerias(id) ON DELETE CASCADE
+            )
+          `, (err4) => {
+            if (err4) {
+              return res.status(500).json({ error: 'Erro ao criar tabela galeria_itens: ' + err4.message });
+            }
+            
+            // Criar uma galeria padrão para migrar os itens antigos
+            db.run(`
+              INSERT INTO galerias (titulo, descricao, data_evento, ativo, ordem)
+              VALUES ('Galeria Geral', 'Imagens migradas da estrutura anterior', '2025-01-01', 1, 1)
+            `, function(err5) {
+              if (err5) {
+                return res.status(500).json({ error: 'Erro ao criar galeria padrão: ' + err5.message });
+              }
+              
+              const galeriaId = this.lastID;
+              
+              // Migrar itens antigos para a nova estrutura
+              db.run(`
+                INSERT INTO galeria_itens (galeria_id, titulo, descricao, imagem, ordem)
+                SELECT ${galeriaId}, titulo, descricao, imagem, 0
+                FROM galeria_old
+              `, (err6) => {
+                // Remover tabela antiga
+                db.run('DROP TABLE galeria_old', () => {
+                  res.json({ 
+                    success: true, 
+                    message: 'Migração da estrutura de galerias concluída! Todos os itens foram movidos para "Galeria Geral".'
+                  });
+                });
+              });
             });
           });
         });
