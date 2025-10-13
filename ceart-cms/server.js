@@ -884,6 +884,25 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Endpoint para rodar seed (apenas em desenvolvimento ou com senha)
+app.post('/api/seed', (req, res) => {
+  const { password } = req.body;
+  const SEED_PASSWORD = process.env.SEED_PASSWORD || 'ceart2025';
+  
+  if (password !== SEED_PASSWORD) {
+    return res.status(401).json({ error: 'Senha inválida' });
+  }
+  
+  // Executar seed
+  const { execSync } = require('child_process');
+  try {
+    execSync('node scripts/seed.js', { cwd: __dirname });
+    res.json({ success: true, message: 'Banco populado com sucesso!' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Rota padrão
 app.get('/', (req, res) => {
   res.json({ 
@@ -896,7 +915,8 @@ app.get('/', (req, res) => {
       carrossel: '/api/carrossel',
       arquivos: '/api/arquivos',
       configuracoes: '/api/configuracoes',
-      admin: '/admin'
+      admin: '/admin',
+      seed: 'POST /api/seed (requer senha)'
     }
   });
 });
