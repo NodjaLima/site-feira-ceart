@@ -39,14 +39,24 @@ export interface BlogPost {
 }
 
 // Interface para Item da Galeria
-export interface GaleriaItem {
+// Interface para Galeria (coleção/edição)
+export interface Galeria {
   id: number;
   titulo: string;
   descricao: string;
-  imagem: string;
-  categoria: string;
-  ordem: number;
+  data_evento: string;
   ativo: boolean;
+  ordem: number;
+}
+
+// Interface para Item de Galeria (foto)
+export interface GaleriaItem {
+  id: number;
+  galeria_id: number;
+  titulo: string;
+  descricao: string;
+  imagem: string;
+  ordem: number;
 }
 
 // Interface para Configurações
@@ -146,19 +156,31 @@ class ApiService {
     return posts.filter(post => post.categoria.toLowerCase() === categoria.toLowerCase());
   }
 
-  // Métodos para Galeria
-  async getGaleria(): Promise<GaleriaItem[]> {
-    return this.request<GaleriaItem[]>('/galeria');
+  // Métodos para Galerias (coleções)
+  async getGalerias(): Promise<Galeria[]> {
+    return this.request<Galeria[]>('/galerias');
   }
 
+  async getGaleriasAtivas(): Promise<Galeria[]> {
+    return this.request<Galeria[]>('/galerias/ativas');
+  }
+
+  async getGaleriaById(id: number): Promise<Galeria> {
+    return this.request<Galeria>(`/galerias/${id}`);
+  }
+
+  // Métodos para Itens de Galeria (fotos)
+  async getGaleriaItens(galeriaId: number): Promise<GaleriaItem[]> {
+    return this.request<GaleriaItem[]>(`/galerias/${galeriaId}/itens`);
+  }
+
+  // Para compatibilidade, retorna itens da primeira galeria ativa
   async getGaleriaAtiva(): Promise<GaleriaItem[]> {
-    const items = await this.getGaleria();
-    return items.filter(item => item.ativo).sort((a, b) => a.ordem - b.ordem);
-  }
-
-  async getGaleriaPorCategoria(categoria: string): Promise<GaleriaItem[]> {
-    const items = await this.getGaleriaAtiva();
-    return items.filter(item => item.categoria.toLowerCase() === categoria.toLowerCase());
+    const galerias = await this.getGaleriasAtivas();
+    if (galerias.length > 0) {
+      return this.getGaleriaItens(galerias[0].id);
+    }
+    return [];
   }
 
   // Métodos para Configurações
@@ -224,8 +246,11 @@ export const useBlog = () => {
 
 export const useGaleria = () => {
   return {
+    getGalerias: () => apiService.getGalerias(),
+    getGaleriasAtivas: () => apiService.getGaleriasAtivas(),
+    getGaleriaById: (id: number) => apiService.getGaleriaById(id),
+    getGaleriaItens: (galeriaId: number) => apiService.getGaleriaItens(galeriaId),
     getGaleriaAtiva: () => apiService.getGaleriaAtiva(),
-    getGaleriaPorCategoria: (categoria: string) => apiService.getGaleriaPorCategoria(categoria),
   };
 };
 

@@ -1,45 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { apiService } from '../services/apiService';
+import { apiService, Galeria as GaleriaType, GaleriaItem } from '../services/apiService';
 import './Galeria.css';
 
-interface GaleriaItem {
-  id: number;
-  titulo: string;
-  imagem: string;
-  categoria: string;
-  descricao: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 const Galeria: React.FC = () => {
+  const [galerias, setGalerias] = useState<GaleriaType[]>([]);
+  const [selectedGaleria, setSelectedGaleria] = useState<GaleriaType | null>(null);
   const [galeriaItens, setGaleriaItens] = useState<GaleriaItem[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [selectedImage, setSelectedImage] = useState<GaleriaItem | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Carregar galeria da API
+  // Carregar galerias da API
   useEffect(() => {
-    const fetchGaleria = async () => {
+    const fetchGalerias = async () => {
       try {
         setLoading(true);
-        const data = await apiService.getGaleria();
-        setGaleriaItens(data);
+        const data = await apiService.getGaleriasAtivas();
+        setGalerias(data);
+        
+        // Seleciona automaticamente a primeira galeria
+        if (data.length > 0) {
+          setSelectedGaleria(data[0]);
+          const itens = await apiService.getGaleriaItens(data[0].id);
+          setGaleriaItens(itens);
+        }
       } catch (error) {
-        console.error('Erro ao carregar galeria:', error);
+        console.error('Erro ao carregar galerias:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchGaleria();
+    fetchGalerias();
   }, []);
 
-  const categories = ['Todas', ...Array.from(new Set(galeriaItens.map(item => item.categoria || 'Sem categoria')))];
+  // Trocar galeria
+  const handleGaleriaChange = async (galeria: GaleriaType) => {
+    setSelectedGaleria(galeria);
+    try {
+      const itens = await apiService.getGaleriaItens(galeria.id);
+      setGaleriaItens(itens);
+    } catch (error) {
+      console.error('Erro ao carregar itens da galeria:', error);
+    }
+  };
 
-  const filteredItems = selectedCategory === 'Todas' 
-    ? galeriaItens 
-    : galeriaItens.filter(item => item.categoria === selectedCategory);
+  const filteredItems = galeriaItens;
 
   const openModal = (item: GaleriaItem) => {
     setSelectedImage(item);
@@ -101,23 +106,36 @@ const Galeria: React.FC = () => {
   return (
     <div className="galeria-page">
       <div className="galeria-header">
-        <h1>Galeria de Trabalhos</h1>
-        <p>Conheça a diversidade e qualidade dos trabalhos artesanais da nossa feira</p>
+        <h1>Galerias de Fotos</h1>
+        <p>Veja as fotos das edições da Feira CEART</p>
       </div>
 
       <div className="galeria-container">
-        {/* Filtros */}
+        {/* Seletor de Galerias */}
         <div className="galeria-filters">
-          {categories.map(category => (
+          {galerias.map(galeria => (
             <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`filter-btn ${selectedCategory === category ? 'active' : ''}`}
+              key={galeria.id}
+              onClick={() => handleGaleriaChange(galeria)}
+              className={`filter-btn ${selectedGaleria?.id === galeria.id ? 'active' : ''}`}
             >
-              {category}
+              {galeria.titulo}
             </button>
           ))}
         </div>
+
+        {/* Descrição da galeria selecionada */}
+        {selectedGaleria && (
+          <div className="galeria-info">
+            <h2>{selectedGaleria.titulo}</h2>
+            {selectedGaleria.descricao && <p>{selectedGaleria.descricao}</p>}
+            {selectedGaleria.data_evento && (
+              <p className="galeria-date">
+                Data do evento: {new Date(selectedGaleria.data_evento).toLocaleDateString('pt-BR')}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Grid de imagens */}
         <div className="galeria-grid">
@@ -127,10 +145,10 @@ const Galeria: React.FC = () => {
               className="galeria-item"
               onClick={() => openModal(item)}
             >
-              <img src={item.imagem} alt={item.titulo} />
+              <img src={item.imagem} alt={item.titulo || 'Imagem da galeria'} />
               <div className="galeria-item-overlay">
-                <h3>{item.titulo}</h3>
-                <p>{item.categoria}</p>
+                <h3>{item.titulo || 'Sem título'}</h3>
+                {item.descricao && <p>{item.descricao}</p>}
               </div>
             </div>
           ))}
@@ -162,11 +180,12 @@ const Galeria: React.FC = () => {
               </button>
             )}
             
-            <img src={selectedImage.imagem} alt={selectedImage.titulo} />
+            <img src={selectedImage.imagem} alt={selectedImage.titulo || 'Imagem'} />
             <div className="modal-info">
-              <h3>{selectedImage.titulo}</h3>
-              <p className="modal-category">{selectedImage.categoria}</p>
-              <p className="modal-description">{selectedImage.descricao}</p>
+              <h3>{selectedImage.titulo || 'Sem título'}</h3>
+              {selectedImage.descricao && (
+                <p className="modal-description">{selectedImage.descricao}</p>
+              )}
               <div className="modal-counter">
                 {getCurrentImageIndex() + 1} de {filteredItems.length}
               </div>
