@@ -21,6 +21,14 @@ if [ ! -d "ceart-app-frontend" ]; then
     exit 1
 fi
 
+# Garantir que está usando a versão correta do Node
+if [ -f "$HOME/.nvm/nvm.sh" ]; then
+    echo -e "${YELLOW}🔧 Carregando NVM...${NC}"
+    source "$HOME/.nvm/nvm.sh"
+    nvm use 22 2>/dev/null || nvm use default
+    echo -e "${GREEN}✅ Node $(node -v)${NC}"
+fi
+
 # Entrar no diretório do frontend
 cd ceart-app-frontend
 
