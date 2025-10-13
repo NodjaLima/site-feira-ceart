@@ -1,0 +1,26 @@
+Options +FollowSymLinks
+RewriteEngine On
+
+# For root domain
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ index.html [L]
+
+# Alternative for subdirectory (uncomment and adjust if needed)
+# RewriteBase /your-folder/
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteRule ^(.*)$ /your-folder/index.html [L]
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "max-age=31536000, public"
+  </FilesMatch>
+</IfModule>
+
+# MIME types
+AddType text/css .css
+AddType application/javascript .js
+
+# Error handling
+ErrorDocument 404 /index.html

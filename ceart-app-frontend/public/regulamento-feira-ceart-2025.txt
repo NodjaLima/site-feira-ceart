@@ -1,0 +1,14 @@
+Este é um arquivo de exemplo para o regulamento da Feira CEART 2025.
+
+Em um projeto real, você colocaria aqui o arquivo PDF oficial com todas as informações detalhadas do regulamento.
+
+Para adicionar um PDF real:
+1. Salve o arquivo PDF na pasta public/ com o nome "regulamento-feira-ceart-2025.pdf"
+2. O link de download já está configurado para acessar esse arquivo
+
+O arquivo deve conter:
+- Regulamento completo
+- Formulários de inscrição
+- Cronograma detalhado
+- Informações de contato
+- Mapas e localização do evento

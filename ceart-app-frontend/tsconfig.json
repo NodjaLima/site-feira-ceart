@@ -1,0 +1,16 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "module": "commonjs",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "types": ["jest"],
+    "esModuleInterop": true,
+    "typeRoots": ["./node_modules/@types", "./src"]
+  },
+  "include": ["src/**/*"]
+}

@@ -1,0 +1,272 @@
+/* Regulamento Page Styles */
+.regulamento-page {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Header da página */
+.regulamento-header {
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  color: white;
+  padding: 80px 20px 60px;
+  text-align: center;
+}
+
+.regulamento-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.regulamento-title {
+  font-size: 4rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  letter-spacing: 3px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.regulamento-subtitle {
+  font-size: 1.3rem;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+/* Container principal */
+.regulamento-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 50px 20px;
+}
+
+.regulamento-content {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Seções */
+.regulamento-section {
+  padding: 40px;
+  border-bottom: 1px solid #eee;
+}
+
+.regulamento-section:last-child {
+  border-bottom: none;
+}
+
+.regulamento-section-title {
+  font-size: 2rem;
+  color: #4CAF50;
+  margin-bottom: 25px;
+  font-weight: bold;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.regulamento-section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: #4CAF50;
+  border-radius: 2px;
+}
+
+/* Items */
+.regulamento-items {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.regulamento-item {
+  background: #f9f9f9;
+  padding: 25px;
+  border-radius: 10px;
+  border-left: 4px solid #4CAF50;
+}
+
+.regulamento-item-title {
+  font-size: 1.3rem;
+  color: #333;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.regulamento-text {
+  color: #555;
+  line-height: 1.7;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+/* Listas */
+.regulamento-list {
+  color: #555;
+  line-height: 1.8;
+  font-size: 1rem;
+  padding-left: 20px;
+  margin: 0;
+}
+
+.regulamento-list li {
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.regulamento-list li::marker {
+  color: #4CAF50;
+}
+
+/* Seção de contato */
+.regulamento-contact {
+  background: #f0f8f0;
+  padding: 25px;
+  border-radius: 10px;
+  border: 1px solid #4CAF50;
+}
+
+.regulamento-contact .regulamento-text {
+  color: #333;
+  margin: 0;
+}
+
+/* Botão de download */
+.regulamento-download {
+  padding: 40px;
+  text-align: center;
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+}
+
+.regulamento-download-btn {
+  background: white;
+  color: #4CAF50;
+  border: none;
+  padding: 18px 35px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.regulamento-download-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  background: #f8f8f8;
+}
+
+.download-icon {
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+.regulamento-download-btn:hover .download-icon {
+  transform: translateY(2px);
+}
+
+.regulamento-download-info {
+  color: white;
+  margin-top: 15px;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .regulamento-title {
+    font-size: 2.5rem;
+  }
+  
+  .regulamento-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .regulamento-container {
+    padding: 30px 15px;
+  }
+  
+  .regulamento-section {
+    padding: 25px 20px;
+  }
+  
+  .regulamento-section-title {
+    font-size: 1.6rem;
+  }
+  
+  .regulamento-item {
+    padding: 20px 15px;
+  }
+  
+  .regulamento-item-title {
+    font-size: 1.1rem;
+  }
+  
+  .regulamento-text {
+    font-size: 0.95rem;
+  }
+  
+  .regulamento-list {
+    font-size: 0.95rem;
+    padding-left: 15px;
+  }
+  
+  .regulamento-download {
+    padding: 30px 20px;
+  }
+  
+  .regulamento-download-btn {
+    padding: 15px 25px;
+    font-size: 1rem;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .regulamento-header {
+    padding: 60px 15px 40px;
+  }
+  
+  .regulamento-title {
+    font-size: 2rem;
+  }
+  
+  .regulamento-subtitle {
+    font-size: 1rem;
+  }
+  
+  .regulamento-section {
+    padding: 20px 15px;
+  }
+  
+  .regulamento-section-title {
+    font-size: 1.4rem;
+  }
+  
+  .regulamento-item {
+    padding: 15px;
+  }
+  
+  .regulamento-download-btn {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
+  
+  .download-icon {
+    width: 20px;
+    height: 20px;
+  }
+}

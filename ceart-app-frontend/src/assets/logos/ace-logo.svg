@@ -1,0 +1,8 @@
+<!-- Placeholder SVG for ACE logo -->
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="80" height="80" fill="#2c5282" rx="8"/>
+  <text x="40" y="30" text-anchor="middle" fill="white" font-size="20" font-weight="bold">ACE</text>
+  <text x="40" y="50" text-anchor="middle" fill="white" font-size="8">Associação</text>
+  <text x="40" y="60" text-anchor="middle" fill="white" font-size="8">Comercial e</text>
+  <text x="40" y="70" text-anchor="middle" fill="white" font-size="8">Empresarial</text>
+</svg>
