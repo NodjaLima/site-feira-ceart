@@ -1,0 +1,14 @@
+{
+  "name": "site-feira-ceart-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "cd ceart-cms && npm start",
+    "install:backend": "cd ceart-cms && npm install",
+    "install:frontend": "cd ceart-app-frontend && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
