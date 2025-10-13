@@ -900,68 +900,49 @@ app.post('/api/seed', async (req, res) => {
     delete require.cache[require.resolve('./scripts/seed-data.js')];
     const seedData = require('./scripts/seed-data.js');
     
-    // Limpar tabelas
-    await new Promise((resolve) => {
+    // Executar tudo em uma única transação para melhor performance
+    await new Promise((resolve, reject) => {
       db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+        
+        // Limpar tabelas
         db.run('DELETE FROM expositores');
         db.run('DELETE FROM posts');
         db.run('DELETE FROM galeria');
-        db.run('DELETE FROM carrossel', resolve);
-      });
-    });
-    
-    // Inserir expositores
-    const insertedExpositores = await new Promise((resolve, reject) => {
-      const stmt = db.prepare('INSERT INTO expositores (nome, categoria, descricao, contato, telefone, email, site) VALUES (?, ?, ?, ?, ?, ?, ?)');
-      let count = 0;
-      seedData.expositores.forEach(exp => {
-        const contato = `${exp.cidade} - ${exp.estado}`;
-        stmt.run(exp.nome, exp.categoria, exp.descricao, contato, exp.telefone, exp.email, exp.instagram, (err) => {
-          if (err) reject(err);
-          count++;
-          if (count === seedData.expositores.length) {
-            stmt.finalize();
-            resolve(count);
-          }
+        db.run('DELETE FROM carrossel');
+        
+        // Inserir expositores
+        const stmtExpositores = db.prepare('INSERT INTO expositores (nome, categoria, descricao, contato, telefone, email, site) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        seedData.expositores.forEach(exp => {
+          const contato = `${exp.cidade} - ${exp.estado}`;
+          stmtExpositores.run(exp.nome, exp.categoria, exp.descricao, contato, exp.telefone, exp.email, exp.instagram);
         });
-      });
-    });
-    
-    // Inserir galeria
-    const insertedGaleria = await new Promise((resolve, reject) => {
-      if (!seedData.galeria || seedData.galeria.length === 0) {
-        resolve(0);
-        return;
-      }
-      const stmt = db.prepare('INSERT INTO galeria (titulo, descricao, categoria, imagem) VALUES (?, ?, ?, ?)');
-      let count = 0;
-      seedData.galeria.forEach(item => {
-        stmt.run(item.titulo, item.descricao, item.categoria, item.imagem, (err) => {
-          if (err) reject(err);
-          count++;
-          if (count === seedData.galeria.length) {
-            stmt.finalize();
-            resolve(count);
-          }
-        });
-      });
-    });
-    
-    // Inserir posts
-    const insertedPosts = await new Promise((resolve, reject) => {
-      if (!seedData.posts || seedData.posts.length === 0) {
-        resolve(0);
-        return;
-      }
-      const stmt = db.prepare('INSERT INTO posts (titulo, resumo, conteudo, imagem_destaque, categoria, autor, publicado) VALUES (?, ?, ?, ?, ?, ?, ?)');
-      let count = 0;
-      seedData.posts.forEach(post => {
-        stmt.run(post.titulo, post.resumo, post.conteudo, post.imagem_destaque, post.categoria, post.autor, post.publicado ? 1 : 0, (err) => {
-          if (err) reject(err);
-          count++;
-          if (count === seedData.posts.length) {
-            stmt.finalize();
-            resolve(count);
+        stmtExpositores.finalize();
+        
+        // Inserir galeria
+        if (seedData.galeria && seedData.galeria.length > 0) {
+          const stmtGaleria = db.prepare('INSERT INTO galeria (titulo, descricao, categoria, imagem) VALUES (?, ?, ?, ?)');
+          seedData.galeria.forEach(item => {
+            stmtGaleria.run(item.titulo, item.descricao, item.categoria, item.imagem);
+          });
+          stmtGaleria.finalize();
+        }
+        
+        // Inserir posts
+        if (seedData.posts && seedData.posts.length > 0) {
+          const stmtPosts = db.prepare('INSERT INTO posts (titulo, resumo, conteudo, imagem_destaque, categoria, autor, publicado) VALUES (?, ?, ?, ?, ?, ?, ?)');
+          seedData.posts.forEach(post => {
+            stmtPosts.run(post.titulo, post.resumo, post.conteudo, post.imagem_destaque, post.categoria, post.autor, post.publicado ? 1 : 0);
+          });
+          stmtPosts.finalize();
+        }
+        
+        db.run('COMMIT', (err) => {
+          if (err) {
+            db.run('ROLLBACK');
+            reject(err);
+          } else {
+            resolve();
           }
         });
       });
@@ -971,9 +952,9 @@ app.post('/api/seed', async (req, res) => {
       success: true, 
       message: 'Banco populado com sucesso!',
       inserted: {
-        expositores: insertedExpositores,
-        galeria: insertedGaleria,
-        posts: insertedPosts
+        expositores: seedData.expositores.length,
+        galeria: seedData.galeria?.length || 0,
+        posts: seedData.posts?.length || 0
       }
     });
   } catch (error) {
