@@ -1,9 +1,12 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// Conectar ao banco
-const dbPath = path.join(__dirname, '..', 'ceart_cms.db');
+// Conectar ao banco (suporta volume persistente)
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..');
+const dbPath = path.join(DATA_DIR, 'ceart_cms.db');
 const db = new sqlite3.Database(dbPath);
+
+console.log(`📁 Usando banco de dados em: ${dbPath}`);
 
 console.log('🌱 Iniciando seed do banco de dados CEART CMS...');
 
