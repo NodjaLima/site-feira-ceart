@@ -1,5 +1,14 @@
 // Configuração base da API
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://site-feira-ceart-production.up.railway.app/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
+
+// Helper para completar URLs de imagem
+export function getFullImageUrl(imagePath: string | null | undefined): string {
+  if (!imagePath) return '/logo.png';
+  if (imagePath.startsWith('http')) return imagePath;
+  if (imagePath.startsWith('/')) return `${BACKEND_BASE_URL}${imagePath}`;
+  return `${BACKEND_BASE_URL}/${imagePath}`;
+}
 
 // Interface para Carrossel
 export interface CarrosselItem {
@@ -21,6 +30,10 @@ export interface Expositor {
   telefone?: string;
   email?: string;
   site?: string;
+  instagram?: string;
+  facebook?: string;
+  whatsapp?: string;
+  galeria_imagens?: string; // JSON string com array de URLs
   created_at: string;
   updated_at: string;
 }
@@ -112,24 +125,40 @@ class ApiService {
 
   async getCarrosselAtivo(): Promise<CarrosselItem[]> {
     const items = await this.getCarrossel();
-    return items.filter(item => item.ativo).sort((a, b) => a.ordem - b.ordem);
-  }
-
-  // Helper para completar URLs de imagem
-  private getFullImageUrl(imagePath: string | null): string {
-    if (!imagePath) return '/logo.png';
-    if (imagePath.startsWith('http')) return imagePath;
-    return `https://site-feira-ceart-production.up.railway.app${imagePath}`;
+    return items
+      .filter(item => item.ativo)
+      .sort((a, b) => a.ordem - b.ordem)
+      .map(item => ({
+        ...item,
+        imagem: getFullImageUrl(item.imagem)
+      }));
   }
 
   // Métodos para Expositores
   async getExpositores(): Promise<Expositor[]> {
     const expositores = await this.request<Expositor[]>('/expositores');
     // Completar URLs das imagens
-    return expositores.map(exp => ({
-      ...exp,
-      imagem: this.getFullImageUrl(exp.imagem)
-    }));
+    return expositores.map(exp => {
+      let galeriaImagens = exp.galeria_imagens;
+      
+      // Parse e corrige URLs da galeria
+      if (galeriaImagens) {
+        try {
+          const galeria = JSON.parse(galeriaImagens);
+          if (Array.isArray(galeria)) {
+            galeriaImagens = JSON.stringify(galeria.map(img => getFullImageUrl(img)));
+          }
+        } catch {
+          // Se não for JSON válido, mantém como está
+        }
+      }
+      
+      return {
+        ...exp,
+        imagem: getFullImageUrl(exp.imagem),
+        galeria_imagens: galeriaImagens
+      };
+    });
   }
 
   async getExpositoresAtivos(): Promise<Expositor[]> {
@@ -138,7 +167,27 @@ class ApiService {
 
   async getExpositorById(id: number): Promise<Expositor | null> {
     try {
-      return await this.request<Expositor>(`/expositores/${id}`);
+      const exp = await this.request<Expositor>(`/expositores/${id}`);
+      
+      let galeriaImagens = exp.galeria_imagens;
+      
+      // Parse e corrige URLs da galeria
+      if (galeriaImagens) {
+        try {
+          const galeria = JSON.parse(galeriaImagens);
+          if (Array.isArray(galeria)) {
+            galeriaImagens = JSON.stringify(galeria.map(img => getFullImageUrl(img)));
+          }
+        } catch {
+          // Se não for JSON válido, mantém como está
+        }
+      }
+      
+      return {
+        ...exp,
+        imagem: getFullImageUrl(exp.imagem),
+        galeria_imagens: galeriaImagens
+      };
     } catch {
       return null;
     }
@@ -146,7 +195,11 @@ class ApiService {
 
   // Métodos para Posts do Blog
   async getPosts(): Promise<BlogPost[]> {
-    return this.request<BlogPost[]>('/posts');
+    const posts = await this.request<BlogPost[]>('/posts');
+    return posts.map(post => ({
+      ...post,
+      imagem_destaque: getFullImageUrl(post.imagem_destaque)
+    }));
   }
 
   async getPostsPublicados(): Promise<BlogPost[]> {
@@ -158,7 +211,11 @@ class ApiService {
 
   async getPostById(id: number): Promise<BlogPost | null> {
     try {
-      return await this.request<BlogPost>(`/posts/${id}`);
+      const post = await this.request<BlogPost>(`/posts/${id}`);
+      return {
+        ...post,
+        imagem_destaque: getFullImageUrl(post.imagem_destaque)
+      };
     } catch {
       return null;
     }
@@ -184,7 +241,11 @@ class ApiService {
 
   // Métodos para Itens de Galeria (fotos)
   async getGaleriaItens(galeriaId: number): Promise<GaleriaItem[]> {
-    return this.request<GaleriaItem[]>(`/galerias/${galeriaId}/itens`);
+    const itens = await this.request<GaleriaItem[]>(`/galerias/${galeriaId}/itens`);
+    return itens.map(item => ({
+      ...item,
+      imagem: getFullImageUrl(item.imagem)
+    }));
   }
 
   // Para compatibilidade, retorna itens da primeira galeria ativa
@@ -212,15 +273,27 @@ class ApiService {
 
   // Métodos para Regulamento
   async getRegulamentoAtivo(): Promise<Regulamento> {
-    return this.request<Regulamento>('/regulamento');
+    const reg = await this.request<Regulamento>('/regulamento');
+    return {
+      ...reg,
+      arquivo_pdf: reg.arquivo_pdf ? getFullImageUrl(reg.arquivo_pdf) : undefined
+    };
   }
 
   async getRegulamentos(): Promise<Regulamento[]> {
-    return this.request<Regulamento[]>('/regulamentos');
+    const regs = await this.request<Regulamento[]>('/regulamentos');
+    return regs.map(reg => ({
+      ...reg,
+      arquivo_pdf: reg.arquivo_pdf ? getFullImageUrl(reg.arquivo_pdf) : undefined
+    }));
   }
 
   async getRegulamentoById(id: number): Promise<Regulamento> {
-    return this.request<Regulamento>(`/regulamento/${id}`);
+    const reg = await this.request<Regulamento>(`/regulamento/${id}`);
+    return {
+      ...reg,
+      arquivo_pdf: reg.arquivo_pdf ? getFullImageUrl(reg.arquivo_pdf) : undefined
+    };
   }
 
   // Método para buscar informações gerais do site
@@ -241,6 +314,15 @@ class ApiService {
       contato_telefone: configMap.contato_telefone || '(11) 99999-9999',
       endereco_completo: configMap.endereco_completo || 'Rua das Artes, 123 - Centro',
       horario_funcionamento: configMap.horario_funcionamento || '9h às 18h',
+      // Novas configurações de branding
+      navbar_logo: configMap.navbar_logo ? getFullImageUrl(configMap.navbar_logo) : '/logo.png',
+      footer_logo: configMap.footer_logo ? getFullImageUrl(configMap.footer_logo) : '',
+      org_name: configMap.org_name || 'ACE',
+      org_description: configMap.org_description || 'Associação Comercial e Empresarial',
+      feira_description: configMap.feira_description || 'Uma iniciativa da ACE - Associação Comercial e Empresarial',
+      site_email: configMap.site_email || 'contato@feiraceart.com.br',
+      site_phone: configMap.site_phone || '(11) 9999-9999',
+      site_address: configMap.site_address || 'São Paulo, SP',
     };
   }
 }

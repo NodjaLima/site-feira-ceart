@@ -1,10 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./Navbar.css";
 import logo from "../../assets/logo.png";
+import { apiService } from "../../services/apiService";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [navbarLogo, setNavbarLogo] = useState(logo);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const siteInfo = await apiService.getInfoSite();
+        if (siteInfo.navbar_logo) {
+          setNavbarLogo(siteInfo.navbar_logo);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar logo do navbar:', error);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const toggleMenu = () => {
     console.log("Menu toggle clicked, current state:", isMenuOpen);
@@ -20,7 +36,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-logo">
         <Link to="/">
-          <img src={logo} alt="Logomarca da Feira" />
+          <img src={navbarLogo} alt="Logomarca da Feira" />
         </Link>
       </div>
       

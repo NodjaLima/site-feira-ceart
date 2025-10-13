@@ -68,7 +68,7 @@ async function loadStats() {
         const [expositoresRes, postsRes, galeriaRes, carrosselRes] = await Promise.all([
             fetch(`${API_BASE}/expositores`),
             fetch(`${API_BASE}/posts`),
-            fetch(`${API_BASE}/galeria`),
+            fetch(`${API_BASE}/galerias`),
             fetch(`${API_BASE}/carrossel`)
         ]);
         
@@ -77,10 +77,10 @@ async function loadStats() {
         const galeriaData = await galeriaRes.json();
         const carrosselData = await carrosselRes.json();
         
-        const totalExpositores = expositoresData.data.length;
-        const totalPosts = postsData.data.length;
-        const totalGaleria = galeriaData.data.length;
-        const totalSlides = carrosselData.data.length;
+        const totalExpositores = Array.isArray(expositoresData) ? expositoresData.length : (expositoresData.data?.length || 0);
+        const totalPosts = Array.isArray(postsData) ? postsData.length : (postsData.data?.length || 0);
+        const totalGaleria = Array.isArray(galeriaData) ? galeriaData.length : (galeriaData.data?.length || 0);
+        const totalSlides = Array.isArray(carrosselData) ? carrosselData.length : (carrosselData.data?.length || 0);
         
         document.getElementById('statsContainer').innerHTML = `
             <div class="stat-card">
@@ -136,11 +136,21 @@ function renderExpositores() {
     
     container.innerHTML = expositores.map(expositor => `
         <div class="item-card">
-            <div class="item-title">${expositor.nome}</div>
-            <div class="item-meta">
-                <strong>${expositor.especialidade}</strong><br>
-                ${expositor.cidade ? `${expositor.cidade}, ${expositor.estado}` : 'Localização não informada'}<br>
-                <small>Cadastrado em: ${new Date(expositor.created_at).toLocaleDateString('pt-BR')}</small>
+            <div style="display: flex; gap: 1rem; align-items: start; margin-bottom: 1rem;">
+                <img 
+                    src="${expositor.imagem || '/logo.png'}" 
+                    alt="${expositor.nome}"
+                    style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 2px solid #e0e0e0;"
+                    onerror="this.src='/logo.png'"
+                >
+                <div style="flex: 1;">
+                    <div class="item-title" style="margin-bottom: 0.5rem;">${expositor.nome}</div>
+                    <div class="item-meta">
+                        <strong>${expositor.categoria || 'Categoria não informada'}</strong><br>
+                        ${expositor.contato || 'Localização não informada'}<br>
+                        <small>Cadastrado em: ${new Date(expositor.created_at).toLocaleDateString('pt-BR')}</small>
+                    </div>
+                </div>
             </div>
             <div class="item-actions">
                 <button class="btn btn-secondary" onclick="editExpositor(${expositor.id})">
@@ -179,6 +189,12 @@ async function saveExpositor(formData) {
             form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Salvar Expositor';
             document.querySelector('#expositorModal .modal-header h3').innerHTML = '<i class="fas fa-user-plus"></i> Novo Expositor';
             
+            // Limpar preview de galeria
+            const preview = document.getElementById('galeria_preview');
+            if (preview) preview.style.display = 'none';
+            const galeriaInputReset = document.getElementById('galeria_fotos');
+            if (galeriaInputReset) galeriaInputReset.value = '';
+            
             loadExpositores();
             loadStats();
         } else {
@@ -197,11 +213,24 @@ async function editExpositor(id) {
         const form = document.getElementById('expositorForm');
         form.querySelector('[name="nome"]').value = expositor.nome || '';
         form.querySelector('[name="categoria"]').value = expositor.categoria || '';
-        form.querySelector('[name="cidade"]').value = expositor.cidade || '';
-        form.querySelector('[name="estado"]').value = expositor.estado || '';
+        
+        // Separar cidade e estado do campo 'contato' que vem como "Cidade - Estado"
+        let cidade = '';
+        let estado = '';
+        if (expositor.contato) {
+            const partes = expositor.contato.split('-').map(p => p.trim());
+            cidade = partes[0] || '';
+            estado = partes[1] || '';
+        }
+        form.querySelector('[name="cidade"]').value = cidade;
+        form.querySelector('[name="estado"]').value = estado;
+        
         form.querySelector('[name="telefone"]').value = expositor.telefone || '';
         form.querySelector('[name="email"]').value = expositor.email || '';
         form.querySelector('[name="instagram"]').value = expositor.instagram || '';
+        form.querySelector('[name="facebook"]').value = expositor.facebook || '';
+        form.querySelector('[name="whatsapp"]').value = expositor.whatsapp || '';
+        form.querySelector('[name="site"]').value = expositor.site || '';
         form.querySelector('[name="descricao"]').value = expositor.descricao || '';
         
         // Alterar o formulário para modo de edição
@@ -1022,14 +1051,52 @@ function formatFileSize(bytes) {
 async function loadConfiguracoes() {
     try {
         const response = await fetch(`${API_BASE}/configuracoes`);
-        const config = await response.json();
+        const configuracoes = await response.json();
+        
+        // Converter array em objeto para facilitar acesso
+        const configMap = {};
+        if (Array.isArray(configuracoes)) {
+            configuracoes.forEach(config => {
+                configMap[config.chave] = config.valor;
+            });
+        }
         
         // Preencher campos com valores do banco
-        if (config && config.site_name) document.getElementById('siteName').value = config.site_name;
-        if (config && config.site_email) document.getElementById('siteEmail').value = config.site_email;
-        if (config && config.site_phone) document.getElementById('sitePhone').value = config.site_phone;
-        if (config && config.site_address) document.getElementById('siteAddress').value = config.site_address;
-        // Adicionar mais campos conforme necessário
+        const setValueIfExists = (id, value) => {
+            const element = document.getElementById(id);
+            if (element && value) element.value = value;
+        };
+        
+        setValueIfExists('siteName', configMap.site_name);
+        setValueIfExists('siteSlogan', configMap.site_slogan);
+        setValueIfExists('siteEmail', configMap.site_email);
+        setValueIfExists('sitePhone', configMap.site_phone);
+        setValueIfExists('siteAddress', configMap.site_address);
+        setValueIfExists('siteWhatsapp', configMap.site_whatsapp);
+        setValueIfExists('siteInstagram', configMap.site_instagram);
+        setValueIfExists('siteFacebook', configMap.site_facebook);
+        setValueIfExists('siteYoutube', configMap.site_youtube);
+        setValueIfExists('siteUrl', configMap.site_url);
+        setValueIfExists('feiraInicio', configMap.feira_inicio);
+        setValueIfExists('feiraFim', configMap.feira_fim);
+        setValueIfExists('orgName', configMap.org_name);
+        setValueIfExists('orgDescription', configMap.org_description);
+        setValueIfExists('feiraDescription', configMap.feira_description);
+        
+        // Preview das logos se existirem
+        if (configMap.navbar_logo) {
+            const navbarPreview = document.getElementById('navbarLogoPreview');
+            if (navbarPreview) {
+                navbarPreview.innerHTML = `<img src="${API_BASE.replace('/api', '')}${configMap.navbar_logo}" style="max-width: 200px; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-top: 10px;">`;
+            }
+        }
+        
+        if (configMap.footer_logo) {
+            const footerPreview = document.getElementById('footerLogoPreview');
+            if (footerPreview) {
+                footerPreview.innerHTML = `<img src="${API_BASE.replace('/api', '')}${configMap.footer_logo}" style="max-width: 120px; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-top: 10px;">`;
+            }
+        }
         
     } catch (error) {
         console.error('Erro ao carregar configurações:', error);
@@ -1037,22 +1104,56 @@ async function loadConfiguracoes() {
 }
 
 async function saveConfiguracoes() {
-    const configuracoes = {
-        site_name: { valor: document.getElementById('siteName').value, descricao: 'Nome do site' },
-        site_email: { valor: document.getElementById('siteEmail').value, descricao: 'Email principal' },
-        site_phone: { valor: document.getElementById('sitePhone').value, descricao: 'Telefone de contato' },
-        site_address: { valor: document.getElementById('siteAddress').value, descricao: 'Endereço da feira' },
-        site_whatsapp: { valor: document.getElementById('siteWhatsapp').value, descricao: 'WhatsApp' },
-        site_instagram: { valor: document.getElementById('siteInstagram').value, descricao: 'Instagram' },
-        site_facebook: { valor: document.getElementById('siteFacebook').value, descricao: 'Facebook' },
-        site_youtube: { valor: document.getElementById('siteYoutube').value, descricao: 'YouTube' },
-        site_url: { valor: document.getElementById('siteUrl').value, descricao: 'Site oficial' },
-        feira_inicio: { valor: document.getElementById('feiraInicio').value, descricao: 'Data de início' },
-        feira_fim: { valor: document.getElementById('feiraFim').value, descricao: 'Data de fim' },
-        site_slogan: { valor: document.getElementById('siteSlogan').value, descricao: 'Slogan/Subtítulo' }
-    };
-    
     try {
+        // 1. Upload das logos primeiro (se houver)
+        const navbarLogoInput = document.getElementById('navbarLogo');
+        const footerLogoInput = document.getElementById('footerLogo');
+        
+        if (navbarLogoInput.files.length > 0 || footerLogoInput.files.length > 0) {
+            const formData = new FormData();
+            if (navbarLogoInput.files.length > 0) {
+                formData.append('navbarLogo', navbarLogoInput.files[0]);
+            }
+            if (footerLogoInput.files.length > 0) {
+                formData.append('footerLogo', footerLogoInput.files[0]);
+            }
+            
+            const logoResponse = await fetch(`${API_BASE}/configuracoes/upload-logos`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const logoResult = await logoResponse.json();
+            if (!logoResult.success) {
+                showError('Erro ao fazer upload das logos');
+                return;
+            }
+        }
+        
+        // 2. Salvar demais configurações
+        const getValueOrEmpty = (id) => {
+            const element = document.getElementById(id);
+            return element ? element.value : '';
+        };
+        
+        const configuracoes = {
+            site_name: { valor: getValueOrEmpty('siteName'), descricao: 'Nome do site' },
+            site_email: { valor: getValueOrEmpty('siteEmail'), descricao: 'Email principal' },
+            site_phone: { valor: getValueOrEmpty('sitePhone'), descricao: 'Telefone de contato' },
+            site_address: { valor: getValueOrEmpty('siteAddress'), descricao: 'Endereço da feira' },
+            site_whatsapp: { valor: getValueOrEmpty('siteWhatsapp'), descricao: 'WhatsApp' },
+            site_instagram: { valor: getValueOrEmpty('siteInstagram'), descricao: 'Instagram' },
+            site_facebook: { valor: getValueOrEmpty('siteFacebook'), descricao: 'Facebook' },
+            site_youtube: { valor: getValueOrEmpty('siteYoutube'), descricao: 'YouTube' },
+            site_url: { valor: getValueOrEmpty('siteUrl'), descricao: 'Site oficial' },
+            feira_inicio: { valor: getValueOrEmpty('feiraInicio'), descricao: 'Data de início' },
+            feira_fim: { valor: getValueOrEmpty('feiraFim'), descricao: 'Data de fim' },
+            site_slogan: { valor: getValueOrEmpty('siteSlogan'), descricao: 'Slogan/Subtítulo' },
+            org_name: { valor: getValueOrEmpty('orgName'), descricao: 'Nome da organização' },
+            org_description: { valor: getValueOrEmpty('orgDescription'), descricao: 'Descrição da organização' },
+            feira_description: { valor: getValueOrEmpty('feiraDescription'), descricao: 'Descrição da feira no footer' }
+        };
+        
         const response = await fetch(`${API_BASE}/configuracoes`, {
             method: 'PUT',
             headers: {
@@ -1065,6 +1166,9 @@ async function saveConfiguracoes() {
         
         if (result.success) {
             showSuccess('Configurações salvas com sucesso!');
+            // Limpar os inputs de file
+            if (navbarLogoInput) navbarLogoInput.value = '';
+            if (footerLogoInput) footerLogoInput.value = '';
         } else {
             showError(result.error || 'Erro ao salvar configurações');
         }
@@ -1084,6 +1188,48 @@ function setupForms() {
             e.preventDefault();
             const formData = new FormData(this);
             saveExpositor(formData);
+        });
+    }
+    
+    // Preview da galeria de imagens do expositor
+    const galeriaInput = document.getElementById('galeria_fotos');
+    if (galeriaInput) {
+        galeriaInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const preview = document.getElementById('galeria_preview');
+            const previewGrid = document.getElementById('galeria_preview_images');
+            
+            if (files.length === 0) {
+                preview.style.display = 'none';
+                return;
+            }
+            
+            // Limitar a 5 imagens
+            if (files.length > 5) {
+                alert('Máximo de 5 imagens permitidas. Selecionando apenas as 5 primeiras.');
+                const dataTransfer = new DataTransfer();
+                files.slice(0, 5).forEach(file => dataTransfer.items.add(file));
+                e.target.files = dataTransfer.files;
+            }
+            
+            // Limpar preview anterior
+            previewGrid.innerHTML = '';
+            preview.style.display = 'block';
+            
+            // Criar previews
+            files.slice(0, 5).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const div = document.createElement('div');
+                    div.className = 'galeria-preview-item';
+                    div.innerHTML = `
+                        <img src="${event.target.result}" alt="Preview ${index + 1}">
+                        <button type="button" class="galeria-preview-remove" onclick="removeGaleriaPreview(${index})" title="Remover">×</button>
+                    `;
+                    previewGrid.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
         });
     }
     
@@ -1169,6 +1315,40 @@ function setupForms() {
                 }
             } else {
                 pdfSizeInfo.textContent = '';
+            }
+        });
+    }
+    
+    // Preview dos logos (navbar e footer)
+    const navbarLogoInput = document.getElementById('navbarLogo');
+    const footerLogoInput = document.getElementById('footerLogo');
+    
+    if (navbarLogoInput) {
+        navbarLogoInput.addEventListener('change', function() {
+            const preview = document.getElementById('navbarLogoPreview');
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview Logo Navbar" style="max-width: 200px; max-height: 80px; border: 2px solid #4CAF50; border-radius: 8px; padding: 10px; background: white;">`;
+                };
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                preview.innerHTML = '';
+            }
+        });
+    }
+    
+    if (footerLogoInput) {
+        footerLogoInput.addEventListener('change', function() {
+            const preview = document.getElementById('footerLogoPreview');
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview Logo Footer" style="max-width: 120px; max-height: 120px; border: 2px solid #4CAF50; border-radius: 8px; padding: 10px; background: white;">`;
+                };
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                preview.innerHTML = '';
             }
         });
     }
@@ -1270,6 +1450,23 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// ===================== HELPER FUNCTIONS =====================
+
+function removeGaleriaPreview(index) {
+    const galeriaInput = document.getElementById('galeria_fotos');
+    if (!galeriaInput || !galeriaInput.files) return;
+    
+    const filesArray = Array.from(galeriaInput.files);
+    filesArray.splice(index, 1);
+    
+    const dataTransfer = new DataTransfer();
+    filesArray.forEach(file => dataTransfer.items.add(file));
+    galeriaInput.files = dataTransfer.files;
+    
+    // Trigger change event to update preview
+    galeriaInput.dispatchEvent(new Event('change'));
+}
+
 // ===================== EXPORT FUNCTIONS =====================
 
 window.showTab = showTab;
@@ -1283,7 +1480,6 @@ window.editGaleria = editGaleria;
 window.deleteGaleria = deleteGaleria;
 window.editCarrossel = editCarrossel;
 window.deleteCarrossel = deleteCarrossel;
-window.editArquivo = editArquivo;
-window.deleteArquivo = deleteArquivo;
 window.saveConfiguracoes = saveConfiguracoes;
 window.previewImage = previewImage;
+window.removeGaleriaPreview = removeGaleriaPreview;

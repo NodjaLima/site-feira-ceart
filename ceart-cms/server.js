@@ -123,11 +123,22 @@ db.serialize(() => {
       telefone TEXT,
       email TEXT,
       site TEXT,
+      instagram TEXT,
+      facebook TEXT,
+      whatsapp TEXT,
       imagem TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  
+  // Adicionar colunas de redes sociais se não existirem (migração)
+  db.run(`ALTER TABLE expositores ADD COLUMN instagram TEXT`, () => {});
+  db.run(`ALTER TABLE expositores ADD COLUMN facebook TEXT`, () => {});
+  db.run(`ALTER TABLE expositores ADD COLUMN whatsapp TEXT`, () => {});
+  
+  // Adicionar coluna para galeria de imagens (JSON array com até 5 imagens)
+  db.run(`ALTER TABLE expositores ADD COLUMN galeria_imagens TEXT`, () => {});
 
   // Tabela de posts do blog
   db.run(`
@@ -260,20 +271,31 @@ app.get('/api/expositores/:id', (req, res) => {
 });
 
 // POST - Criar expositor
-app.post('/api/expositores', upload.single('foto'), (req, res) => {
-  const { nome, categoria, descricao, cidade, estado, telefone, email, instagram } = req.body;
-  const imagem = req.file ? `/uploads/${req.file.filename}` : null;
+app.post('/api/expositores', upload.fields([
+  { name: 'foto', maxCount: 1 },
+  { name: 'galeria_fotos', maxCount: 5 }
+]), (req, res) => {
+  const { nome, categoria, descricao, cidade, estado, telefone, email, instagram, facebook, whatsapp, site } = req.body;
+  
+  // Foto de perfil
+  const imagem = req.files?.foto?.[0] ? `/uploads/${req.files.foto[0].filename}` : null;
+  
+  // Galeria de imagens
+  let galeriaImagens = null;
+  if (req.files?.galeria_fotos && req.files.galeria_fotos.length > 0) {
+    const galeriaUrls = req.files.galeria_fotos.map(file => `/uploads/${file.filename}`);
+    galeriaImagens = JSON.stringify(galeriaUrls);
+  }
   
   // Mapear campos do formulário para campos do banco
   const contato = cidade && estado ? `${cidade} - ${estado}` : (cidade || estado || null);
-  const site = instagram || null;
   
   const query = `
-    INSERT INTO expositores (nome, categoria, descricao, contato, telefone, email, site, imagem)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO expositores (nome, categoria, descricao, contato, telefone, email, site, instagram, facebook, whatsapp, imagem, galeria_imagens)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   
-  db.run(query, [nome, categoria, descricao, contato, telefone, email, site, imagem], function(err) {
+  db.run(query, [nome, categoria, descricao, contato, telefone, email, site, instagram, facebook, whatsapp, imagem, galeriaImagens], function(err) {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -287,43 +309,71 @@ app.post('/api/expositores', upload.single('foto'), (req, res) => {
 });
 
 // PUT - Atualizar expositor
-app.put('/api/expositores/:id', upload.single('foto'), (req, res) => {
+app.put('/api/expositores/:id', upload.fields([
+  { name: 'foto', maxCount: 1 },
+  { name: 'galeria_fotos', maxCount: 5 }
+]), (req, res) => {
   const { id } = req.params;
-  const { nome, categoria, descricao, cidade, estado, telefone, email, instagram } = req.body;
+  const { nome, categoria, descricao, cidade, estado, telefone, email, instagram, facebook, whatsapp, site } = req.body;
   
   // Mapear campos do formulário para campos do banco
   const contato = cidade && estado ? `${cidade} - ${estado}` : (cidade || estado || null);
-  const site = instagram || null;
   
-  let query = `
-    UPDATE expositores 
-    SET nome = ?, categoria = ?, descricao = ?, contato = ?, telefone = ?, email = ?, site = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `;
-  let params = [nome, categoria, descricao, contato, telefone, email, site, id];
-  
-  if (req.file) {
-    const imagem = `/uploads/${req.file.filename}`;
-    query = `
-      UPDATE expositores 
-      SET nome = ?, categoria = ?, descricao = ?, contato = ?, telefone = ?, email = ?, site = ?, imagem = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `;
-    params = [nome, categoria, descricao, contato, telefone, email, site, imagem, id];
-  }
-  
-  db.run(query, params, function(err) {
+  // Buscar galeria existente primeiro
+  db.get('SELECT galeria_imagens FROM expositores WHERE id = ?', [id], (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
     
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Expositor não encontrado' });
+    // Processar nova galeria se houver
+    let galeriaImagens = row?.galeria_imagens || null;
+    if (req.files?.galeria_fotos && req.files.galeria_fotos.length > 0) {
+      let galeriaAtual = [];
+      if (galeriaImagens) {
+        try {
+          galeriaAtual = JSON.parse(galeriaImagens);
+        } catch (e) {
+          galeriaAtual = [];
+        }
+      }
+      
+      const novasImagens = req.files.galeria_fotos.map(file => `/uploads/${file.filename}`);
+      const novaGaleria = [...galeriaAtual, ...novasImagens].slice(0, 5);
+      galeriaImagens = JSON.stringify(novaGaleria);
     }
     
-    res.json({ 
-      success: true, 
-      message: 'Expositor atualizado com sucesso!' 
+    // Montar query de atualização
+    let query = `
+      UPDATE expositores 
+      SET nome = ?, categoria = ?, descricao = ?, contato = ?, telefone = ?, email = ?, site = ?, instagram = ?, facebook = ?, whatsapp = ?, galeria_imagens = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+    let params = [nome, categoria, descricao, contato, telefone, email, site, instagram, facebook, whatsapp, galeriaImagens, id];
+    
+    // Se houver nova foto de perfil, incluir na query
+    if (req.files?.foto?.[0]) {
+      const imagem = `/uploads/${req.files.foto[0].filename}`;
+      query = `
+        UPDATE expositores 
+        SET nome = ?, categoria = ?, descricao = ?, contato = ?, telefone = ?, email = ?, site = ?, instagram = ?, facebook = ?, whatsapp = ?, imagem = ?, galeria_imagens = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `;
+      params = [nome, categoria, descricao, contato, telefone, email, site, instagram, facebook, whatsapp, imagem, galeriaImagens, id];
+    }
+    
+    db.run(query, params, function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Expositor não encontrado' });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Expositor atualizado com sucesso!' 
+      });
     });
   });
 });
@@ -345,6 +395,113 @@ app.delete('/api/expositores/:id', (req, res) => {
       success: true, 
       message: 'Expositor excluído com sucesso!' 
     });
+  });
+});
+
+// POST - Upload de imagens da galeria do expositor (até 5 imagens)
+app.post('/api/expositores/:id/galeria', upload.array('galeria_fotos', 5), (req, res) => {
+  const { id } = req.params;
+  
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'Nenhuma imagem enviada' });
+  }
+  
+  // Limitar a 5 imagens
+  if (req.files.length > 5) {
+    return res.status(400).json({ error: 'Máximo de 5 imagens permitidas' });
+  }
+  
+  // Criar array de URLs das imagens
+  const imagensUrls = req.files.map(file => `/uploads/${file.filename}`);
+  
+  // Buscar galeria existente
+  db.get('SELECT galeria_imagens FROM expositores WHERE id = ?', [id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!row) {
+      return res.status(404).json({ error: 'Expositor não encontrado' });
+    }
+    
+    // Combinar com imagens existentes (se houver)
+    let galeriaAtual = [];
+    if (row.galeria_imagens) {
+      try {
+        galeriaAtual = JSON.parse(row.galeria_imagens);
+      } catch (e) {
+        galeriaAtual = [];
+      }
+    }
+    
+    // Adicionar novas imagens (respeitando limite de 5)
+    const novaGaleria = [...galeriaAtual, ...imagensUrls].slice(0, 5);
+    
+    // Atualizar banco de dados
+    db.run(
+      'UPDATE expositores SET galeria_imagens = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [JSON.stringify(novaGaleria), id],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        
+        res.json({
+          success: true,
+          galeria: novaGaleria,
+          message: `${imagensUrls.length} imagem(ns) adicionada(s) à galeria`
+        });
+      }
+    );
+  });
+});
+
+// DELETE - Remover imagem específica da galeria
+app.delete('/api/expositores/:id/galeria/:index', (req, res) => {
+  const { id, index } = req.params;
+  const imageIndex = parseInt(index);
+  
+  db.get('SELECT galeria_imagens FROM expositores WHERE id = ?', [id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!row) {
+      return res.status(404).json({ error: 'Expositor não encontrado' });
+    }
+    
+    let galeria = [];
+    if (row.galeria_imagens) {
+      try {
+        galeria = JSON.parse(row.galeria_imagens);
+      } catch (e) {
+        return res.status(500).json({ error: 'Erro ao processar galeria' });
+      }
+    }
+    
+    if (imageIndex < 0 || imageIndex >= galeria.length) {
+      return res.status(404).json({ error: 'Imagem não encontrada' });
+    }
+    
+    // Remover imagem do array
+    galeria.splice(imageIndex, 1);
+    
+    // Atualizar banco de dados
+    db.run(
+      'UPDATE expositores SET galeria_imagens = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [JSON.stringify(galeria), id],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        
+        res.json({
+          success: true,
+          galeria: galeria,
+          message: 'Imagem removida da galeria'
+        });
+      }
+    );
   });
 });
 
@@ -992,7 +1149,56 @@ app.post('/api/configuracoes', (req, res) => {
   });
 });
 
-// PUT - Atualizar configuração
+// PUT - Atualizar múltiplas configurações de uma vez
+app.put('/api/configuracoes', (req, res) => {
+  const configuracoes = req.body;
+  
+  // Preparar promises para atualizar cada configuração
+  const promises = Object.keys(configuracoes).map(chave => {
+    return new Promise((resolve, reject) => {
+      const { valor, descricao } = configuracoes[chave];
+      
+      // Tentar atualizar primeiro
+      db.run(
+        'UPDATE configuracoes SET valor = ?, updated_at = CURRENT_TIMESTAMP WHERE chave = ?',
+        [valor, chave],
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          
+          // Se não atualizou nenhuma linha, inserir nova
+          if (this.changes === 0) {
+            db.run(
+              'INSERT INTO configuracoes (chave, valor, tipo, descricao) VALUES (?, ?, ?, ?)',
+              [chave, valor, 'texto', descricao],
+              (err) => {
+                if (err) reject(err);
+                else resolve();
+              }
+            );
+          } else {
+            resolve();
+          }
+        }
+      );
+    });
+  });
+  
+  Promise.all(promises)
+    .then(() => {
+      res.json({
+        success: true,
+        message: 'Configurações atualizadas com sucesso!'
+      });
+    })
+    .catch((err) => {
+      res.status(500).json({ error: err.message });
+    });
+});
+
+// PUT - Atualizar configuração individual
 app.put('/api/configuracoes/:id', (req, res) => {
   const { id } = req.params;
   const { chave, valor, tipo, descricao } = req.body;
@@ -1037,6 +1243,74 @@ app.delete('/api/configuracoes/:id', (req, res) => {
       message: 'Configuração excluída com sucesso!' 
     });
   });
+});
+
+// POST - Upload de logos (navbar e footer)
+app.post('/api/configuracoes/upload-logos', upload.fields([
+  { name: 'navbarLogo', maxCount: 1 },
+  { name: 'footerLogo', maxCount: 1 }
+]), (req, res) => {
+  try {
+    const updates = [];
+    
+    // Upload do logo do navbar
+    if (req.files?.navbarLogo?.[0]) {
+      const navbarLogoUrl = `/uploads/${req.files.navbarLogo[0].filename}`;
+      updates.push({ chave: 'navbar_logo', valor: navbarLogoUrl });
+    }
+    
+    // Upload do logo do footer
+    if (req.files?.footerLogo?.[0]) {
+      const footerLogoUrl = `/uploads/${req.files.footerLogo[0].filename}`;
+      updates.push({ chave: 'footer_logo', valor: footerLogoUrl });
+    }
+    
+    // Atualizar ou criar as configurações
+    const promises = updates.map(({ chave, valor }) => {
+      return new Promise((resolve, reject) => {
+        // Tentar atualizar primeiro
+        db.run(
+          'UPDATE configuracoes SET valor = ?, updated_at = CURRENT_TIMESTAMP WHERE chave = ?',
+          [valor, chave],
+          function(err) {
+            if (err) {
+              reject(err);
+              return;
+            }
+            
+            // Se não atualizou nenhuma linha, inserir nova
+            if (this.changes === 0) {
+              db.run(
+                'INSERT INTO configuracoes (chave, valor, tipo, descricao) VALUES (?, ?, ?, ?)',
+                [chave, valor, 'imagem', `Logo ${chave === 'navbar_logo' ? 'do Navbar' : 'do Footer'}`],
+                (err) => {
+                  if (err) reject(err);
+                  else resolve();
+                }
+              );
+            } else {
+              resolve();
+            }
+          }
+        );
+      });
+    });
+    
+    Promise.all(promises)
+      .then(() => {
+        res.json({
+          success: true,
+          message: 'Logos atualizadas com sucesso!',
+          logos: updates
+        });
+      })
+      .catch((err) => {
+        res.status(500).json({ error: err.message });
+      });
+      
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Rota para admin

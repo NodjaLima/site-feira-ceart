@@ -400,6 +400,77 @@
             margin-right: 1rem;
         }
 
+        .form-section-header {
+            margin-bottom: 1rem;
+        }
+
+        .form-section-header h4 {
+            color: #4CAF50;
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .form-section-header p {
+            color: #666;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .galeria-preview {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .galeria-preview h5 {
+            color: #333;
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        .galeria-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .galeria-preview-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .galeria-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .galeria-preview-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .galeria-preview-remove:hover {
+            background: #dc3545;
+        }
+
         @media (max-width: 768px) {
             .nav-tabs {
                 flex-direction: column;
@@ -717,6 +788,50 @@
                     </div>
                 </div>
 
+                <!-- Logos -->
+                <div class="form-section">
+                    <h3><i class="fas fa-image"></i> Logotipos</h3>
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Logo do Navbar (Menu)</label>
+                            <input type="file" class="form-control" id="navbarLogo" accept="image/*">
+                            <small class="form-text">Logo que aparece no topo do site. Formato: PNG ou SVG. Recomendado: 150x50px</small>
+                            <div id="navbarLogoPreview" style="margin-top: 10px;"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Logo do Footer (Rodapé)</label>
+                            <input type="file" class="form-control" id="footerLogo" accept="image/*">
+                            <small class="form-text">Logo que aparece no rodapé. Formato: PNG ou SVG. Recomendado: 80x80px</small>
+                            <div id="footerLogoPreview" style="margin-top: 10px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informações da Organização -->
+                <div class="form-section">
+                    <h3><i class="fas fa-building"></i> Informações da Organização</h3>
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Nome da Organização</label>
+                            <input type="text" class="form-control" id="orgName" value="ACE" placeholder="Ex: ACE, SEBRAE, etc">
+                            <small class="form-text">Nome que aparece no rodapé ao lado do logo</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Descrição da Organização</label>
+                            <textarea class="form-control" id="orgDescription" rows="3" placeholder="Ex: Associação Comercial e Empresarial">Associação Comercial
+e Empresarial</textarea>
+                            <small class="form-text">Descrição curta que aparece abaixo do nome</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Descrição da Feira (Footer)</label>
+                        <textarea class="form-control" id="feiraDescription" rows="4" placeholder="Descrição que aparece no footer sobre a feira">Uma iniciativa da ACE - Associação Comercial e Empresarial
+Promovendo cultura, tradição e empreendedorismo em nossa região
+Conectando artesãos, empreendedores e a comunidade</textarea>
+                        <small class="form-text">Texto informativo sobre a feira no rodapé. Use quebras de linha para separar as frases</small>
+                    </div>
+                </div>
+
                 <button class="btn btn-primary" onclick="saveConfiguracoes()">
                     <i class="fas fa-save"></i> Salvar Todas as Configurações
                 </button>
@@ -739,21 +854,14 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Categoria</label>
-                        <select class="form-control" name="categoria" required>
-                            <option value="">Selecione...</option>
-                            <option value="Cerâmica">Cerâmica</option>
-                            <option value="Marcenaria">Marcenaria</option>
-                            <option value="Têxtil">Têxtil</option>
-                            <option value="Ourivesaria">Ourivesaria</option>
-                            <option value="Fibras">Fibras</option>
-                            <option value="Bordado">Bordado</option>
-                            <option value="Escultura">Escultura</option>
-                            <option value="Couro">Couro</option>
-                            <option value="Gastronomia">Gastronomia</option>
-                            <option value="Produtor Rural">Produtor Rural</option>
-                            <option value="Economia Criativa">Economia Criativa</option>
-                            <option value="Outros">Outros</option>
-                        </select>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            name="categoria" 
+                            required
+                            placeholder="Ex: Cerâmica, Marcenaria, Têxtil, Bordado..."
+                        >
+                        <small class="form-text">Digite livremente a categoria/especialidade do artesão</small>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Cidade</label>
@@ -772,18 +880,65 @@
                         <input type="email" class="form-control" name="email">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Instagram</label>
-                    <input type="text" class="form-control" name="instagram" placeholder="@usuario">
+                
+                <div class="form-section">
+                    <h3><i class="fas fa-share-alt"></i> Redes Sociais</h3>
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Instagram</label>
+                            <input type="text" class="form-control" name="instagram" placeholder="@usuario ou URL completa">
+                            <small class="form-text">Ex: @artesao ou instagram.com/artesao</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Facebook</label>
+                            <input type="text" class="form-control" name="facebook" placeholder="facebook.com/artesao">
+                            <small class="form-text">Cole a URL do perfil ou página</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">WhatsApp</label>
+                            <input type="tel" class="form-control" name="whatsapp" placeholder="(99) 99999-9999">
+                            <small class="form-text">Número com DDD para contato direto</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Site/Loja Online</label>
+                            <input type="url" class="form-control" name="site" placeholder="https://mesite.com">
+                            <small class="form-text">URL completa do site ou loja</small>
+                        </div>
+                    </div>
                 </div>
+                
                 <div class="form-group">
                     <label class="form-label">Descrição</label>
-                    <textarea class="form-control" name="descricao" placeholder="Conte sobre o trabalho do artesão..."></textarea>
+                    <textarea class="form-control" name="descricao" rows="5" placeholder="Conte sobre o trabalho do artesão, sua história, técnicas utilizadas e produtos oferecidos..."></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Foto de Perfil</label>
                     <input type="file" class="form-control" name="foto" accept="image/*">
                 </div>
+                
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h4>🖼️ Galeria de Trabalhos</h4>
+                        <p>Adicione até 5 fotos dos trabalhos do artesão</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fotos da Galeria (máximo 5)</label>
+                        <input 
+                            type="file" 
+                            class="form-control" 
+                            id="galeria_fotos" 
+                            name="galeria_fotos" 
+                            accept="image/*" 
+                            multiple
+                        >
+                        <small class="form-text">⚠️ Selecione até 5 imagens de uma vez. Formatos: JPG, PNG, GIF</small>
+                    </div>
+                    <div id="galeria_preview" class="galeria-preview" style="display: none;">
+                        <h5>Pré-visualização:</h5>
+                        <div id="galeria_preview_images" class="galeria-preview-grid"></div>
+                    </div>
+                </div>
+                
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Salvar Expositor
                 </button>

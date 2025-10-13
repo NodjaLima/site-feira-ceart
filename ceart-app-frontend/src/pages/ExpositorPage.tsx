@@ -7,6 +7,8 @@ const ExpositorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [expositor, setExpositor] = useState<Expositor | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [galeriaImagens, setGaleriaImagens] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchExpositor = async () => {
@@ -14,6 +16,18 @@ const ExpositorPage: React.FC = () => {
         try {
           const foundExpositor = await apiService.getExpositorById(parseInt(id));
           setExpositor(foundExpositor);
+          
+          // Parse da galeria de imagens
+          if (foundExpositor?.galeria_imagens) {
+            try {
+              const galeriaArray = JSON.parse(foundExpositor.galeria_imagens);
+              if (Array.isArray(galeriaArray)) {
+                setGaleriaImagens(galeriaArray);
+              }
+            } catch (e) {
+              console.error('Erro ao parsear galeria_imagens:', e);
+            }
+          }
         } catch (error) {
           console.error('Erro ao carregar expositor:', error);
         } finally {
@@ -34,16 +48,47 @@ const ExpositorPage: React.FC = () => {
   };
 
   const handleInstagram = () => {
-    if (expositor?.site && expositor.site.includes('@')) {
-      window.open(`https://instagram.com/${expositor.site.replace('@', '')}`, '_blank');
+    if (expositor?.instagram) {
+      const username = expositor.instagram.replace('@', '').replace('instagram.com/', '').replace('https://', '').replace('http://', '');
+      window.open(`https://instagram.com/${username}`, '_blank');
     }
   };
 
-  const handleEmail = () => {
-    if (expositor?.email) {
-      const subject = `Contato via CEART - ${expositor.nome}`;
-      const body = `Olá ${expositor.nome}!\n\nVi seu trabalho no site da feira CEART e gostaria de saber mais sobre seus produtos.\n\nAguardo seu contato.\n\nObrigado(a)!`;
-      window.open(`mailto:${expositor.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+  const handleFacebook = () => {
+    if (expositor?.facebook) {
+      const url = expositor.facebook.startsWith('http') ? expositor.facebook : `https://${expositor.facebook}`;
+      window.open(url, '_blank');
+    }
+  };
+
+  // Funções do modal de galeria
+  const openImageModal = (index: number) => {
+    setSelectedImageIndex(index);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImageIndex(null);
+  };
+
+  const goToNextImage = () => {
+    if (selectedImageIndex !== null && selectedImageIndex < galeriaImagens.length - 1) {
+      setSelectedImageIndex(selectedImageIndex + 1);
+    }
+  };
+
+  const goToPreviousImage = () => {
+    if (selectedImageIndex !== null && selectedImageIndex > 0) {
+      setSelectedImageIndex(selectedImageIndex - 1);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      closeImageModal();
+    } else if (e.key === 'ArrowLeft') {
+      goToPreviousImage();
+    } else if (e.key === 'ArrowRight') {
+      goToNextImage();
     }
   };
 
@@ -99,7 +144,7 @@ const ExpositorPage: React.FC = () => {
                 )}
                 
                 <div className="expositor-hero-social">
-                  {expositor.site && expositor.site.includes('@') && (
+                  {expositor.instagram && (
                     <a
                       href="#"
                       onClick={(e) => { e.preventDefault(); handleInstagram(); }}
@@ -109,14 +154,14 @@ const ExpositorPage: React.FC = () => {
                       📷
                     </a>
                   )}
-                  {expositor.email && (
+                  {expositor.facebook && (
                     <a
                       href="#"
-                      onClick={(e) => { e.preventDefault(); handleEmail(); }}
+                      onClick={(e) => { e.preventDefault(); handleFacebook(); }}
                       className="social-link"
-                      title="Email"
+                      title="Facebook"
                     >
-                      ✉️
+                      👥
                     </a>
                   )}
                 </div>
@@ -135,6 +180,29 @@ const ExpositorPage: React.FC = () => {
             <p>{expositor.descricao}</p>
           </div>
         </section>
+
+        {/* Galeria de Trabalhos */}
+        {galeriaImagens.length > 0 && (
+          <section className="galeria-trabalhos">
+            <h2>Galeria de Trabalhos</h2>
+            <div className="galeria-grid">
+              {galeriaImagens.map((imagemUrl: string, index: number) => (
+                <div 
+                  key={index} 
+                  className="galeria-item"
+                  onClick={() => openImageModal(index)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img 
+                    src={imagemUrl} 
+                    alt={`Trabalho ${index + 1} de ${expositor.nome}`}
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Contato */}
         <section>
@@ -160,27 +228,89 @@ const ExpositorPage: React.FC = () => {
               </div>
             )}
             
-            {expositor.site && expositor.site.includes('@') && (
+            {expositor.instagram && (
               <div className="contato-item">
                 <span className="contato-icon">📷</span>
                 <div>
                   <h4>Instagram</h4>
+                  <p>{expositor.instagram}</p>
+                </div>
+              </div>
+            )}
+            
+            {expositor.facebook && (
+              <div className="contato-item">
+                <span className="contato-icon">👥</span>
+                <div>
+                  <h4>Facebook</h4>
+                  <p>{expositor.facebook}</p>
+                </div>
+              </div>
+            )}
+            
+            {expositor.site && (
+              <div className="contato-item">
+                <span className="contato-icon">🌐</span>
+                <div>
+                  <h4>Site/Loja Online</h4>
                   <p>{expositor.site}</p>
                 </div>
               </div>
             )}
           </div>
-          
-          {expositor.telefone && (
-            <div className="contato-cta">
-              <button className="contato-cta-btn" onClick={handleWhatsApp}>
-                <span className="whatsapp-icon">📱</span>
-                Conversar pelo WhatsApp
-              </button>
-            </div>
-          )}
         </section>
       </main>
+
+      {/* Modal de Galeria */}
+      {selectedImageIndex !== null && (
+        <div 
+          className="galeria-modal"
+          onClick={closeImageModal}
+          onKeyDown={handleKeyPress}
+          tabIndex={0}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button 
+            className="galeria-modal-close" 
+            onClick={closeImageModal}
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+          
+          {selectedImageIndex > 0 && (
+            <button 
+              className="galeria-modal-nav galeria-modal-prev"
+              onClick={(e) => { e.stopPropagation(); goToPreviousImage(); }}
+              aria-label="Imagem anterior"
+            >
+              ‹
+            </button>
+          )}
+          
+          <div className="galeria-modal-content" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={galeriaImagens[selectedImageIndex]} 
+              alt={`Trabalho ${selectedImageIndex + 1} de ${expositor.nome}`}
+            />
+            <div className="galeria-modal-info">
+              <h3>Trabalho {selectedImageIndex + 1} de {galeriaImagens.length}</h3>
+              <p>{expositor.nome}</p>
+            </div>
+          </div>
+          
+          {selectedImageIndex < galeriaImagens.length - 1 && (
+            <button 
+              className="galeria-modal-nav galeria-modal-next"
+              onClick={(e) => { e.stopPropagation(); goToNextImage(); }}
+              aria-label="Próxima imagem"
+            >
+              ›
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
