@@ -133,12 +133,12 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS posts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       titulo TEXT NOT NULL,
-      excerpt TEXT NOT NULL,
+      resumo TEXT,
       conteudo TEXT NOT NULL,
+      imagem_destaque TEXT,
       categoria TEXT,
-      imagem TEXT,
       autor TEXT,
-      readTime TEXT DEFAULT '5 min',
+      publicado INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -346,16 +346,16 @@ app.get('/api/posts/:id', (req, res) => {
 });
 
 // POST - Criar post
-app.post('/api/posts', upload.single('imagem'), (req, res) => {
-  const { titulo, excerpt, conteudo, categoria, autor, readTime } = req.body;
-  const imagem = req.file ? `/uploads/${req.file.filename}` : null;
+app.post('/api/posts', upload.single('imagem_destaque'), (req, res) => {
+  const { titulo, resumo, conteudo, categoria, autor, publicado } = req.body;
+  const imagem_destaque = req.file ? `/uploads/${req.file.filename}` : req.body.imagem_destaque || null;
   
   const query = `
-    INSERT INTO posts (titulo, excerpt, conteudo, categoria, imagem, autor, readTime)
+    INSERT INTO posts (titulo, resumo, conteudo, categoria, imagem_destaque, autor, publicado)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   
-  db.run(query, [titulo, excerpt, conteudo, categoria, imagem, autor, readTime || '5 min'], function(err) {
+  db.run(query, [titulo, resumo, conteudo, categoria, imagem_destaque, autor, publicado !== undefined ? publicado : 1], function(err) {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -369,25 +369,33 @@ app.post('/api/posts', upload.single('imagem'), (req, res) => {
 });
 
 // PUT - Atualizar post
-app.put('/api/posts/:id', upload.single('imagem'), (req, res) => {
+app.put('/api/posts/:id', upload.single('imagem_destaque'), (req, res) => {
   const { id } = req.params;
-  const { titulo, excerpt, conteudo, categoria, autor, readTime } = req.body;
+  const { titulo, resumo, conteudo, categoria, autor, publicado } = req.body;
   
   let query = `
     UPDATE posts 
-    SET titulo = ?, excerpt = ?, conteudo = ?, categoria = ?, autor = ?, readTime = ?, updated_at = CURRENT_TIMESTAMP
+    SET titulo = ?, resumo = ?, conteudo = ?, categoria = ?, autor = ?, publicado = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `;
-  let params = [titulo, excerpt, conteudo, categoria, autor, readTime || '5 min', id];
+  let params = [titulo, resumo, conteudo, categoria, autor, publicado !== undefined ? publicado : 1, id];
   
   if (req.file) {
-    const imagem = `/uploads/${req.file.filename}`;
+    const imagem_destaque = `/uploads/${req.file.filename}`;
     query = `
       UPDATE posts 
-      SET titulo = ?, excerpt = ?, conteudo = ?, categoria = ?, imagem = ?, autor = ?, readTime = ?, updated_at = CURRENT_TIMESTAMP
+      SET titulo = ?, resumo = ?, conteudo = ?, categoria = ?, imagem_destaque = ?, autor = ?, publicado = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    params = [titulo, excerpt, conteudo, categoria, imagem, autor, readTime || '5 min', id];
+    params = [titulo, resumo, conteudo, categoria, imagem_destaque, autor, publicado !== undefined ? publicado : 1, id];
+  } else if (req.body.imagem_destaque) {
+    const imagem_destaque = req.body.imagem_destaque;
+    query = `
+      UPDATE posts 
+      SET titulo = ?, resumo = ?, conteudo = ?, categoria = ?, imagem_destaque = ?, autor = ?, publicado = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+    params = [titulo, resumo, conteudo, categoria, imagem_destaque, autor, publicado !== undefined ? publicado : 1, id];
   }
   
   db.run(query, params, function(err) {
