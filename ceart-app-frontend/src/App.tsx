@@ -12,10 +12,7 @@ import PostPage from './pages/post/PostPage';
 import Navbar from './components/navbar/Navbar';
 import Footer from './components/footer/Footer';
 
-console.log('=== APP.TSX CARREGADO ===');
-
 function App() {
-  console.log('=== APP RENDERIZANDO ===');
   return (
     <Router>
       <Navbar />

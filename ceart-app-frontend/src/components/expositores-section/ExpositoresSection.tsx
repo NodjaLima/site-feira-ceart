@@ -10,21 +10,16 @@ const ExpositoresSection = () => {
   useEffect(() => {
     const fetchExpositores = async () => {
       try {
-        console.log('[ExpositoresSection] Iniciando carregamento...');
         const expositoresData = await apiService.getExpositoresAtivos();
-        console.log('[ExpositoresSection] Dados recebidos:', expositoresData);
         // Pega apenas os 3 primeiros para exibir na home
         setExpositores(expositoresData.slice(0, 3));
-        console.log('[ExpositoresSection] Primeiros 3:', expositoresData.slice(0, 3));
       } catch (error) {
-        console.error('[ExpositoresSection] Erro ao carregar:', error);
+        console.error('Erro ao carregar expositores:', error);
       } finally {
-        console.log('[ExpositoresSection] Finalizando carregamento');
         setLoading(false);
       }
     };
 
-    console.log('[ExpositoresSection] useEffect executado');
     fetchExpositores();
   }, []);
 

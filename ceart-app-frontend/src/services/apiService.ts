@@ -60,14 +60,9 @@ export interface Configuracao {
 
 // Classe para gerenciar chamadas da API
 class ApiService {
-  constructor() {
-    console.log('[API] Inicializado com URL:', API_BASE_URL);
-  }
-
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
-      console.log(`[API] Chamando: ${url}`);
       const response = await fetch(url, {
         ...options,
         headers: {
@@ -76,16 +71,13 @@ class ApiService {
         },
       });
 
-      console.log(`[API] Response status: ${response.status}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log(`[API] Data received:`, data);
-      return data;
+      return await response.json();
     } catch (error) {
-      console.error(`[API] Call failed for ${endpoint}:`, error);
+      console.error(`API call failed for ${endpoint}:`, error);
       throw error;
     }
   }
@@ -110,7 +102,6 @@ class ApiService {
   // Métodos para Expositores
   async getExpositores(): Promise<Expositor[]> {
     const expositores = await this.request<Expositor[]>('/expositores');
-    console.log('Expositores carregados:', expositores);
     // Completar URLs das imagens
     return expositores.map(exp => ({
       ...exp,
