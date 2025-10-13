@@ -87,6 +87,8 @@ const upload = multer({
 const DATA_DIR = process.env.DATA_DIR || '.';
 const DB_PATH = path.join(DATA_DIR, 'ceart_cms.db');
 
+console.log(`📁 Banco de dados configurado em: ${DB_PATH}`);
+
 // Criar diretório de dados se não existir
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -907,6 +909,19 @@ app.post('/api/seed', (req, res) => {
   }
 });
 
+// Endpoint de debug para verificar configuração
+app.get('/api/debug', (req, res) => {
+  db.get('SELECT COUNT(*) as count FROM expositores', (err, row) => {
+    res.json({
+      database_path: DB_PATH,
+      data_dir: DATA_DIR,
+      uploads_dir: UPLOADS_DIR,
+      expositores_count: row?.count || 0,
+      node_env: process.env.NODE_ENV
+    });
+  });
+});
+
 // Rota padrão
 app.get('/', (req, res) => {
   res.json({ 
@@ -920,7 +935,8 @@ app.get('/', (req, res) => {
       arquivos: '/api/arquivos',
       configuracoes: '/api/configuracoes',
       admin: '/admin',
-      seed: 'POST /api/seed (requer senha)'
+      seed: 'POST /api/seed (requer senha)',
+      debug: '/api/debug'
     }
   });
 });
