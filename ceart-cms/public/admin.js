@@ -197,12 +197,12 @@ async function editExpositor(id) {
         // Preencher o formulário com os dados do expositor
         const form = document.getElementById('expositorForm');
         form.querySelector('[name="nome"]').value = expositor.nome || '';
-        form.querySelector('[name="especialidade"]').value = expositor.categoria || '';
-        form.querySelector('[name="cidade"]').value = expositor.contato || '';
-        form.querySelector('[name="estado"]').value = expositor.telefone || '';
+        form.querySelector('[name="categoria"]').value = expositor.categoria || '';
+        form.querySelector('[name="cidade"]').value = expositor.cidade || '';
+        form.querySelector('[name="estado"]').value = expositor.estado || '';
         form.querySelector('[name="telefone"]').value = expositor.telefone || '';
         form.querySelector('[name="email"]').value = expositor.email || '';
-        form.querySelector('[name="instagram"]').value = expositor.site || '';
+        form.querySelector('[name="instagram"]').value = expositor.instagram || '';
         form.querySelector('[name="descricao"]').value = expositor.descricao || '';
         
         // Alterar o formulário para modo de edição
