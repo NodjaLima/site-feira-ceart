@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import "../styles/Regulamento.css";
 import { useRegulamento, Regulamento as RegulamentoType } from "../services/apiService";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://site-feira-ceart-production.up.railway.app';
+// Remove '/api' do final da URL para acessar uploads diretamente
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://site-feira-ceart-production.up.railway.app').replace(/\/api$/, '');
 
 const Regulamento = () => {
   const [regulamento, setRegulamento] = useState<RegulamentoType | null>(null);
@@ -26,9 +27,15 @@ const Regulamento = () => {
 
   const handleDownloadRegulamento = () => {
     if (regulamento?.arquivo_pdf) {
+      // Remove a primeira barra se existir para evitar duplicação
+      const pdfPath = regulamento.arquivo_pdf.startsWith('/') 
+        ? regulamento.arquivo_pdf 
+        : `/${regulamento.arquivo_pdf}`;
+      
       const link = document.createElement('a');
-      link.href = `${API_BASE_URL}${regulamento.arquivo_pdf}`;
+      link.href = `${API_BASE_URL}${pdfPath}`;
       link.download = `regulamento-feira-ceart-${regulamento.ano}.pdf`;
+      link.target = '_blank'; // Abre em nova aba como fallback
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -69,10 +76,37 @@ const Regulamento = () => {
       <div className="regulamento-container">
         <div className="regulamento-content">
           
-          <div 
-            className="regulamento-dynamic-content"
-            dangerouslySetInnerHTML={{ __html: regulamento.conteudo }}
-          />
+          <div className="regulamento-dynamic-content">
+            {regulamento.conteudo.split('\n\n').map((paragrafo, index) => {
+              // Se é um título (começa com número seguido de ponto e espaço)
+              if (/^\d+\.\s/.test(paragrafo)) {
+                return (
+                  <div key={index} className="regulamento-section">
+                    <h2 className="regulamento-section-title">{paragrafo}</h2>
+                  </div>
+                );
+              }
+              
+              // Se é um item de lista (começa com hífen, asterisco ou letra seguida de parênteses)
+              if (/^[-*]\s/.test(paragrafo) || /^[a-z]\)\s/i.test(paragrafo)) {
+                const items = paragrafo.split('\n').filter(item => item.trim());
+                return (
+                  <ul key={index} className="regulamento-list">
+                    {items.map((item, i) => (
+                      <li key={i}>{item.replace(/^[-*]\s/, '').replace(/^[a-z]\)\s/i, '')}</li>
+                    ))}
+                  </ul>
+                );
+              }
+              
+              // Parágrafo normal
+              return (
+                <p key={index} className="regulamento-text">
+                  {paragrafo}
+                </p>
+              );
+            })}
+          </div>
 
           {regulamento.arquivo_pdf && (
             <div className="regulamento-download">

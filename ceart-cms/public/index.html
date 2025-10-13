@@ -446,8 +446,8 @@
             <button class="nav-tab" onclick="showTab('carrossel')">
                 <i class="fas fa-sliders-h"></i> Carrossel
             </button>
-            <button class="nav-tab" onclick="showTab('arquivos')">
-                <i class="fas fa-file-pdf"></i> Arquivos
+            <button class="nav-tab" onclick="showTab('regulamento')">
+                <i class="fas fa-gavel"></i> Regulamento
             </button>
             <button class="nav-tab" onclick="showTab('configuracoes')">
                 <i class="fas fa-cog"></i> Configurações
@@ -531,17 +531,17 @@
             </div>
         </div>
 
-        <!-- Tab: Arquivos -->
-        <div id="arquivos-tab" class="tab-content">
+        <!-- Tab: Regulamento -->
+        <div id="regulamento-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title"><i class="fas fa-file-pdf"></i> Arquivos e Documentos</h2>
-                    <button class="btn btn-primary" onclick="openModal('arquivoModal')">
-                        <i class="fas fa-plus"></i> Novo Arquivo
+                    <h2 class="card-title"><i class="fas fa-gavel"></i> Regulamento da Feira</h2>
+                    <button class="btn btn-primary" onclick="openModal('regulamentoModal')">
+                        <i class="fas fa-plus"></i> Novo Regulamento
                     </button>
                 </div>
-                <div id="arquivosList" class="grid grid-2">
-                    <!-- Lista de arquivos -->
+                <div id="regulamentosList" class="grid grid-1">
+                    <!-- Lista de regulamentos -->
                 </div>
             </div>
         </div>
@@ -875,39 +875,65 @@
         </div>
     </div>
 
-    <!-- Modal: Novo Arquivo -->
-    <div id="arquivoModal" class="modal">
+    <!-- Modal: Novo Regulamento -->
+    <div id="regulamentoModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-file-upload"></i> Novo Arquivo/Documento</h3>
-                <span class="close" onclick="closeModal('arquivoModal')">&times;</span>
+                <h3><i class="fas fa-gavel"></i> Novo Regulamento</h3>
+                <span class="close" onclick="closeModal('regulamentoModal')">&times;</span>
             </div>
-            <form id="arquivoForm" enctype="multipart/form-data">
+            <form id="regulamentoForm" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label class="form-label">Nome do Arquivo</label>
-                    <input type="text" class="form-control" name="nome" required placeholder="Ex: Regulamento Feira CEART 2025">
+                    <label class="form-label">Título *</label>
+                    <input type="text" class="form-control" name="titulo" required placeholder="Ex: Regulamento Feira CEART 2025">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Categoria</label>
-                    <select class="form-control" name="categoria" required>
-                        <option value="regulamento">Regulamento</option>
-                        <option value="formularios">Formulários</option>
-                        <option value="manuais">Manuais</option>
-                        <option value="certificados">Certificados</option>
-                        <option value="outros">Outros</option>
-                    </select>
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" name="subtitulo" placeholder="Ex: Edição Primavera - Valorização do Artesanato Local">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Descrição</label>
-                    <textarea class="form-control" name="descricao" rows="3" placeholder="Descreva o conteúdo do arquivo..."></textarea>
+                    <label class="form-label">Ano *</label>
+                    <input type="number" class="form-control" name="ano" required min="2000" max="2100" value="2025">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Arquivo</label>
-                    <input type="file" class="form-control" name="arquivo" accept=".pdf,.doc,.docx,.txt" required>
-                    <small class="form-text">Formatos aceitos: PDF, DOC, DOCX, TXT (máximo 10MB)</small>
+                    <label class="form-label">Conteúdo do Regulamento *</label>
+                    <textarea class="form-control" name="conteudo" rows="15" required id="regulamentoConteudo" placeholder="Digite o regulamento completo. Exemplo:
+
+1. OBJETIVO
+Este regulamento tem por objetivo...
+
+2. PARTICIPANTES
+Podem participar...
+
+3. INSCRIÇÕES
+As inscrições deverão..."></textarea>
+                    <small class="form-text">
+                        <strong>💡 Dicas de Formatação:</strong><br>
+                        • Use números seguidos de ponto (1., 2., 3.) para criar títulos de seção<br>
+                        • Use quebras de linha duplas (Enter duas vezes) para separar seções<br>
+                        • Listas com hífen (-) ou asterisco (*) são formatadas automaticamente<br>
+                        • O texto será exibido com formatação e espaçamento adequados
+                    </small>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                        <small id="conteudoCounter" class="form-text" style="font-weight: bold;">0 / 50.000 caracteres</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Arquivo PDF (opcional)</label>
+                    <input type="file" class="form-control" name="arquivo_pdf" accept=".pdf" id="regulamentoPdf">
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                        <small class="form-text">Upload do regulamento em PDF para download no site</small>
+                        <small id="pdfSizeInfo" class="form-text" style="font-weight: bold; color: #666;"></small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" name="ativo" checked> Regulamento Ativo
+                    </label>
+                    <small class="form-text">Apenas um regulamento pode estar ativo por vez (será exibido no site)</small>
                 </div>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-upload"></i> Enviar Arquivo
+                    <i class="fas fa-save"></i> Salvar Regulamento
                 </button>
             </form>
         </div>

@@ -6,7 +6,7 @@ let expositores = [];
 let posts = [];
 let galeria = [];
 let carrossel = [];
-let arquivos = [];
+let regulamentos = [];
 
 // ===================== INICIALIZAÇÃO =====================
 
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadPosts();
     loadGalerias();
     loadCarrossel();
-    loadArquivos();
+    loadRegulamentos();
     loadConfiguracoes();
     setupForms();
 });
@@ -828,58 +828,68 @@ async function deleteCarrossel(id) {
     }
 }
 
-// ===================== ARQUIVOS =====================
+// ===================== REGULAMENTOS =====================
 
-async function loadArquivos() {
+async function loadRegulamentos() {
     try {
-        const response = await fetch(`${API_BASE}/arquivos`);
-        arquivos = await response.json();
-        renderArquivos();
+        const response = await fetch(`${API_BASE}/regulamentos`);
+        regulamentos = await response.json();
+        renderRegulamentos();
     } catch (error) {
-        console.error('Erro ao carregar arquivos:', error);
-        showError('Erro ao carregar arquivos');
+        console.error('Erro ao carregar regulamentos:', error);
+        showError('Erro ao carregar regulamentos');
     }
 }
 
-function renderArquivos() {
-    const container = document.getElementById('arquivosList');
+function renderRegulamentos() {
+    const container = document.getElementById('regulamentosList');
     
-    if (arquivos.length === 0) {
+    if (regulamentos.length === 0) {
         container.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #666;">
-                <i class="fas fa-file-pdf" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                <p>Nenhum arquivo enviado ainda.</p>
-                <button class="btn btn-primary" onclick="openModal('arquivoModal')" style="margin-top: 1rem;">
-                    <i class="fas fa-plus"></i> Enviar Primeiro Arquivo
+            <div style="text-align: center; padding: 2rem; color: #666;">
+                <i class="fas fa-gavel" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>Nenhum regulamento cadastrado ainda.</p>
+                <button class="btn btn-primary" onclick="openModal('regulamentoModal')" style="margin-top: 1rem;">
+                    <i class="fas fa-plus"></i> Criar Primeiro Regulamento
                 </button>
             </div>
         `;
         return;
     }
     
-    container.innerHTML = arquivos.map(arquivo => `
-        <div class="item-card">
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                <i class="fas fa-file-pdf file-icon"></i>
+    container.innerHTML = regulamentos.map(reg => `
+        <div class="item-card ${reg.ativo ? 'ativo' : 'inativo'}">
+            <div class="item-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
                 <div>
-                    <div class="item-title">${arquivo.nome}</div>
-                    <div class="file-info">
-                        <span class="file-size">${formatFileSize(arquivo.tamanho)} • ${arquivo.tipo}</span>
-                    </div>
+                    <h3 class="item-title">${reg.titulo}</h3>
+                    ${reg.subtitulo ? `<p style="color: #666; margin: 0.5rem 0;">${reg.subtitulo}</p>` : ''}
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span class="badge ${reg.ativo ? 'badge-success' : 'badge-secondary'}">
+                        ${reg.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                    <span class="badge badge-primary">Ano: ${reg.ano}</span>
                 </div>
             </div>
             <div class="item-meta">
-                <strong>Categoria:</strong> ${arquivo.categoria}<br>
-                ${arquivo.descricao ? arquivo.descricao.substring(0, 100) + '...' : ''}
+                <strong>Publicado em:</strong> ${new Date(reg.created_at).toLocaleDateString('pt-BR')} às ${new Date(reg.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}<br>
+                ${reg.updated_at && reg.updated_at !== reg.created_at ? `<strong>Última atualização:</strong> ${new Date(reg.updated_at).toLocaleDateString('pt-BR')} às ${new Date(reg.updated_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}<br>` : ''}
+                <strong>Conteúdo:</strong><br>
+                <div style="max-height: 100px; overflow: hidden; text-overflow: ellipsis; color: #666; margin: 0.5rem 0;">
+                    ${reg.conteudo.substring(0, 200)}...
+                </div>
+                ${reg.arquivo_pdf ? `<div style="margin-top: 0.5rem;"><i class="fas fa-file-pdf"></i> PDF disponível para download</div>` : ''}
             </div>
-            <div class="item-actions">
-                <a href="${arquivo.arquivo}" target="_blank" class="btn btn-primary">
-                    <i class="fas fa-download"></i> Download
-                </a>
-                <button class="btn btn-secondary" onclick="editArquivo(${arquivo.id})">
+            <div class="item-actions" style="margin-top: 1rem;">
+                ${reg.arquivo_pdf ? `
+                    <a href="${reg.arquivo_pdf}" target="_blank" class="btn btn-primary btn-sm">
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                ` : ''}
+                <button class="btn btn-secondary btn-sm" onclick="editRegulamento(${reg.id})">
                     <i class="fas fa-edit"></i> Editar
                 </button>
-                <button class="btn btn-danger" onclick="deleteArquivo(${arquivo.id})">
+                <button class="btn btn-danger btn-sm" onclick="deleteRegulamento(${reg.id})">
                     <i class="fas fa-trash"></i> Excluir
                 </button>
             </div>
@@ -887,13 +897,40 @@ function renderArquivos() {
     `).join('');
 }
 
-async function saveArquivo(formData) {
+async function saveRegulamento(formData) {
+    const form = document.getElementById('regulamentoForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    
     try {
-        const form = document.getElementById('arquivoForm');
+        // Validar tamanho do arquivo PDF (máximo 10MB)
+        const arquivoPdf = formData.get('arquivo_pdf');
+        if (arquivoPdf && arquivoPdf.size > 0) {
+            const maxSize = 10 * 1024 * 1024; // 10MB em bytes
+            if (arquivoPdf.size > maxSize) {
+                showError('O arquivo PDF é muito grande! Tamanho máximo: 10MB. Tamanho do arquivo: ' + (arquivoPdf.size / 1024 / 1024).toFixed(2) + 'MB');
+                return;
+            }
+        }
+        
+        // Validar tamanho do conteúdo (máximo 50.000 caracteres)
+        const conteudo = formData.get('conteudo');
+        if (conteudo && conteudo.length > 50000) {
+            showError('O conteúdo é muito grande! Máximo: 50.000 caracteres. Seu conteúdo tem: ' + conteudo.length + ' caracteres.');
+            return;
+        }
+        
         const editId = form.getAttribute('data-edit-id');
         const isEdit = editId !== null;
         
-        const url = isEdit ? `${API_BASE}/arquivos/${editId}` : `${API_BASE}/arquivos`;
+        // Mostrar loading no botão
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+        
+        // Mostrar mensagem de progresso
+        showInfo('Enviando dados... Por favor, aguarde.');
+        
+        const url = isEdit ? `${API_BASE}/regulamento/${editId}` : `${API_BASE}/regulamento`;
         const method = isEdit ? 'PUT' : 'POST';
         
         const response = await fetch(url, {
@@ -904,68 +941,70 @@ async function saveArquivo(formData) {
         const result = await response.json();
         
         if (result.success) {
-            showSuccess(isEdit ? 'Arquivo atualizado com sucesso!' : 'Arquivo enviado com sucesso!');
-            closeModal('arquivoModal');
+            showSuccess(isEdit ? 'Regulamento atualizado com sucesso!' : 'Regulamento criado com sucesso!');
+            closeModal('regulamentoModal');
             
-            // Reset form for next use
+            // Reset form
+            form.reset();
             form.removeAttribute('data-edit-id');
-            form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-upload"></i> Enviar Arquivo';
-            document.querySelector('#arquivoModal .modal-header h3').innerHTML = '<i class="fas fa-file-upload"></i> Novo Arquivo/Documento';
-            form.querySelector('[name="arquivo"]').setAttribute('required', 'required');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Salvar Regulamento';
+            document.querySelector('#regulamentoModal .modal-header h3').innerHTML = '<i class="fas fa-gavel"></i> Novo Regulamento';
+            form.querySelector('[name="arquivo_pdf"]').removeAttribute('required');
             
-            loadArquivos();
+            loadRegulamentos();
             loadStats();
         } else {
-            showError(result.error || (isEdit ? 'Erro ao atualizar arquivo' : 'Erro ao enviar arquivo'));
+            showError(result.error || (isEdit ? 'Erro ao atualizar regulamento' : 'Erro ao criar regulamento'));
         }
     } catch (error) {
-        console.error('Erro ao salvar arquivo:', error);
-        showError('Erro ao salvar arquivo');
+        console.error('Erro ao salvar regulamento:', error);
+        showError('Erro ao salvar regulamento. Verifique o console para mais detalhes.');
+    } finally {
+        // Restaurar botão
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     }
 }
 
-async function editArquivo(id) {
-    const arquivo = arquivos.find(a => a.id === id);
-    if (arquivo) {
-        // Preencher o formulário com os dados do arquivo
-        const form = document.getElementById('arquivoForm');
-        form.querySelector('[name="nome"]').value = arquivo.nome || '';
-        form.querySelector('[name="categoria"]').value = arquivo.categoria || '';
-        form.querySelector('[name="descricao"]').value = arquivo.descricao || '';
+async function editRegulamento(id) {
+    const regulamento = regulamentos.find(r => r.id === id);
+    if (regulamento) {
+        const form = document.getElementById('regulamentoForm');
+        form.querySelector('[name="titulo"]').value = regulamento.titulo || '';
+        form.querySelector('[name="subtitulo"]').value = regulamento.subtitulo || '';
+        form.querySelector('[name="ano"]').value = regulamento.ano || new Date().getFullYear();
+        form.querySelector('[name="conteudo"]').value = regulamento.conteudo || '';
+        form.querySelector('[name="ativo"]').checked = regulamento.ativo === 1;
         
-        // Alterar o formulário para modo de edição
+        // Modo de edição
         form.setAttribute('data-edit-id', id);
-        form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Atualizar Arquivo';
+        form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Atualizar Regulamento';
         
-        // Abrir o modal
-        openModal('arquivoModal');
-        document.querySelector('#arquivoModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Arquivo';
-        
-        // Tornar o campo de arquivo opcional para edição
-        form.querySelector('[name="arquivo"]').removeAttribute('required');
+        openModal('regulamentoModal');
+        document.querySelector('#regulamentoModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Regulamento';
     }
 }
 
-async function deleteArquivo(id) {
-    const arquivo = arquivos.find(a => a.id === id);
-    if (arquivo && confirm(`Tem certeza que deseja excluir o arquivo "${arquivo.nome}"?`)) {
+async function deleteRegulamento(id) {
+    const regulamento = regulamentos.find(r => r.id === id);
+    if (regulamento && confirm(`Tem certeza que deseja excluir o regulamento "${regulamento.titulo}"?\n\nEsta ação não pode ser desfeita.`)) {
         try {
-            const response = await fetch(`${API_BASE}/arquivos/${id}`, {
+            const response = await fetch(`${API_BASE}/regulamento/${id}`, {
                 method: 'DELETE'
             });
             
             const result = await response.json();
             
             if (result.success) {
-                showSuccess('Arquivo excluído com sucesso!');
-                loadArquivos();
+                showSuccess('Regulamento excluído com sucesso!');
+                loadRegulamentos();
                 loadStats();
             } else {
-                showError(result.error || 'Erro ao excluir arquivo');
+                showError(result.error || 'Erro ao excluir regulamento');
             }
         } catch (error) {
-            console.error('Erro ao excluir arquivo:', error);
-            showError('Erro ao excluir arquivo');
+            console.error('Erro ao excluir regulamento:', error);
+            showError('Erro ao excluir regulamento');
         }
     }
 }
@@ -1089,12 +1128,48 @@ function setupForms() {
     }
     
     // Form de Arquivo
-    const arquivoForm = document.getElementById('arquivoForm');
-    if (arquivoForm) {
-        arquivoForm.addEventListener('submit', function(e) {
+    const regulamentoForm = document.getElementById('regulamentoForm');
+    if (regulamentoForm) {
+        regulamentoForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            saveArquivo(formData);
+            saveRegulamento(formData);
+        });
+    }
+    
+    // Contador de caracteres do conteúdo
+    const conteudoTextarea = document.getElementById('regulamentoConteudo');
+    const conteudoCounter = document.getElementById('conteudoCounter');
+    if (conteudoTextarea && conteudoCounter) {
+        conteudoTextarea.addEventListener('input', function() {
+            const length = this.value.length;
+            conteudoCounter.textContent = `${length.toLocaleString('pt-BR')} / 50.000 caracteres`;
+            if (length > 50000) {
+                conteudoCounter.style.color = 'red';
+            } else if (length > 45000) {
+                conteudoCounter.style.color = 'orange';
+            } else {
+                conteudoCounter.style.color = '#666';
+            }
+        });
+    }
+    
+    // Indicador de tamanho do arquivo PDF
+    const pdfInput = document.getElementById('regulamentoPdf');
+    const pdfSizeInfo = document.getElementById('pdfSizeInfo');
+    if (pdfInput && pdfSizeInfo) {
+        pdfInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const sizeMB = (this.files[0].size / 1024 / 1024).toFixed(2);
+                pdfSizeInfo.textContent = `Arquivo: ${sizeMB} MB`;
+                if (this.files[0].size > 10485760) {
+                    pdfSizeInfo.style.color = 'red';
+                } else {
+                    pdfSizeInfo.style.color = '#4CAF50';
+                }
+            } else {
+                pdfSizeInfo.textContent = '';
+            }
         });
     }
 }
