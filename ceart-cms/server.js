@@ -5,6 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const sqlite3 = require('sqlite3').verbose();
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,8 +46,21 @@ const corsOptions = {
 
 // Middlewares
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Configuração de sessão
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'ceart-cms-secret-key-2025',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS em produção
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+  }
+}));
 
 // Configurar diretório de uploads (suporta volume persistente)
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
@@ -139,6 +155,42 @@ db.serialize(() => {
   
   // Adicionar coluna para galeria de imagens (JSON array com até 5 imagens)
   db.run(`ALTER TABLE expositores ADD COLUMN galeria_imagens TEXT`, () => {});
+
+  // Tabela de usuários para autenticação
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      name TEXT,
+      email TEXT,
+      role TEXT DEFAULT 'admin',
+      active BOOLEAN DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `, () => {
+    // Criar usuário admin padrão se não existir
+    db.get('SELECT id FROM users WHERE username = ?', ['admin'], (err, row) => {
+      if (!row) {
+        const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        const hashedPassword = bcrypt.hashSync(defaultPassword, 10);
+        
+        db.run(
+          'INSERT INTO users (username, password, name, email, role) VALUES (?, ?, ?, ?, ?)',
+          ['admin', hashedPassword, 'Administrador', 'admin@ceart.com', 'admin'],
+          (err) => {
+            if (!err) {
+              console.log('✅ Usuário admin criado com sucesso!');
+              console.log('📧 Username: admin');
+              console.log('🔑 Password:', defaultPassword);
+              console.log('⚠️  Por favor, altere a senha padrão após o primeiro login!');
+            }
+          }
+        );
+      }
+    });
+  });
 
   // Tabela de posts do blog
   db.run(`
@@ -241,6 +293,118 @@ db.serialize(() => {
   `);
 });
 
+// ==================== MIDDLEWARE DE AUTENTICAÇÃO ====================
+
+// Middleware para verificar se o usuário está autenticado
+const requireAuth = (req, res, next) => {
+  if (req.session && req.session.userId) {
+    return next();
+  }
+  
+  // Se for uma requisição da API, retornar 401
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({ error: 'Não autenticado' });
+  }
+  
+  // Se for uma requisição normal, redirecionar para login (apenas se não estiver já no login)
+  if (req.path !== '/login') {
+    return res.redirect('/login');
+  }
+  
+  return next();
+};
+
+// ==================== ROTAS DE AUTENTICAÇÃO ====================
+
+// POST - Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password, rememberMe } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
+    }
+    
+    // Buscar usuário no banco
+    db.get(
+      'SELECT * FROM users WHERE username = ? AND active = 1',
+      [username],
+      async (err, user) => {
+        if (err) {
+          return res.status(500).json({ error: 'Erro ao buscar usuário' });
+        }
+        
+        if (!user) {
+          return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+        }
+        
+        // Verificar senha
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        
+        if (!isValidPassword) {
+          return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+        }
+        
+        // Criar sessão
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        req.session.name = user.name;
+        req.session.role = user.role;
+        
+        // Se marcou "lembrar-me", aumentar tempo da sessão
+        if (rememberMe) {
+          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
+        }
+        
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            role: user.role
+          }
+        });
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao realizar login' });
+  }
+});
+
+// GET - Verificar autenticação
+app.get('/api/auth/check', requireAuth, (req, res) => {
+  res.json({
+    authenticated: true,
+    user: {
+      id: req.session.userId,
+      username: req.session.username,
+      name: req.session.name,
+      role: req.session.role
+    }
+  });
+});
+
+// POST - Logout
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erro ao fazer logout' });
+    }
+    res.clearCookie('connect.sid');
+    res.json({ success: true, message: 'Logout realizado com sucesso' });
+  });
+});
+
+// GET - Página de login
+app.get('/login', (req, res) => {
+  // Se já está autenticado, redirecionar para admin
+  if (req.session && req.session.userId) {
+    return res.redirect('/admin');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
 // ==================== ROTAS EXPOSITORES ====================
 
 // GET - Listar expositores
@@ -270,8 +434,8 @@ app.get('/api/expositores/:id', (req, res) => {
   });
 });
 
-// POST - Criar expositor
-app.post('/api/expositores', upload.fields([
+// POST - Criar expositor (protegido)
+app.post('/api/expositores', requireAuth, upload.fields([
   { name: 'foto', maxCount: 1 },
   { name: 'galeria_fotos', maxCount: 5 }
 ]), (req, res) => {
@@ -308,8 +472,8 @@ app.post('/api/expositores', upload.fields([
   });
 });
 
-// PUT - Atualizar expositor
-app.put('/api/expositores/:id', upload.fields([
+// PUT - Atualizar expositor (protegido)
+app.put('/api/expositores/:id', requireAuth, upload.fields([
   { name: 'foto', maxCount: 1 },
   { name: 'galeria_fotos', maxCount: 5 }
 ]), (req, res) => {
@@ -378,8 +542,8 @@ app.put('/api/expositores/:id', upload.fields([
   });
 });
 
-// DELETE - Excluir expositor
-app.delete('/api/expositores/:id', (req, res) => {
+// DELETE - Excluir expositor (protegido)
+app.delete('/api/expositores/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   
   db.run('DELETE FROM expositores WHERE id = ?', [id], function(err) {
@@ -398,8 +562,8 @@ app.delete('/api/expositores/:id', (req, res) => {
   });
 });
 
-// POST - Upload de imagens da galeria do expositor (até 5 imagens)
-app.post('/api/expositores/:id/galeria', upload.array('galeria_fotos', 5), (req, res) => {
+// POST - Upload de imagens da galeria do expositor (até 5 imagens) (protegido)
+app.post('/api/expositores/:id/galeria', requireAuth, upload.array('galeria_fotos', 5), (req, res) => {
   const { id } = req.params;
   
   if (!req.files || req.files.length === 0) {
@@ -456,8 +620,8 @@ app.post('/api/expositores/:id/galeria', upload.array('galeria_fotos', 5), (req,
   });
 });
 
-// DELETE - Remover imagem específica da galeria
-app.delete('/api/expositores/:id/galeria/:index', (req, res) => {
+// DELETE - Remover imagem específica da galeria (protegido)
+app.delete('/api/expositores/:id/galeria/:index', requireAuth, (req, res) => {
   const { id, index } = req.params;
   const imageIndex = parseInt(index);
   
@@ -534,8 +698,8 @@ app.get('/api/posts/:id', (req, res) => {
   });
 });
 
-// POST - Criar post
-app.post('/api/posts', upload.single('imagem_destaque'), (req, res) => {
+// POST - Criar post (protegido)
+app.post('/api/posts', requireAuth, upload.single('imagem_destaque'), (req, res) => {
   const { titulo, resumo, conteudo, categoria, autor, publicado } = req.body;
   const imagem_destaque = req.file ? `/uploads/${req.file.filename}` : req.body.imagem_destaque || null;
   
@@ -557,8 +721,8 @@ app.post('/api/posts', upload.single('imagem_destaque'), (req, res) => {
   });
 });
 
-// PUT - Atualizar post
-app.put('/api/posts/:id', upload.single('imagem_destaque'), (req, res) => {
+// PUT - Atualizar post (protegido)
+app.put('/api/posts/:id', requireAuth, upload.single('imagem_destaque'), (req, res) => {
   const { id } = req.params;
   const { titulo, resumo, conteudo, categoria, autor, publicado } = req.body;
   
@@ -603,8 +767,8 @@ app.put('/api/posts/:id', upload.single('imagem_destaque'), (req, res) => {
   });
 });
 
-// DELETE - Excluir post
-app.delete('/api/posts/:id', (req, res) => {
+// DELETE - Excluir post (protegido)
+app.delete('/api/posts/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   
   db.run('DELETE FROM posts WHERE id = ?', [id], function(err) {
@@ -662,8 +826,8 @@ app.get('/api/galerias/:id', (req, res) => {
   });
 });
 
-// POST - Criar galeria
-app.post('/api/galerias', (req, res) => {
+// POST - Criar galeria (protegido)
+app.post('/api/galerias', requireAuth, (req, res) => {
   const { titulo, descricao, data_evento, ativo, ordem } = req.body;
   
   const query = `
@@ -684,8 +848,8 @@ app.post('/api/galerias', (req, res) => {
   });
 });
 
-// PUT - Atualizar galeria
-app.put('/api/galerias/:id', (req, res) => {
+// PUT - Atualizar galeria (protegido)
+app.put('/api/galerias/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   const { titulo, descricao, data_evento, ativo, ordem } = req.body;
   
@@ -711,8 +875,8 @@ app.put('/api/galerias/:id', (req, res) => {
   });
 });
 
-// DELETE - Excluir galeria
-app.delete('/api/galerias/:id', (req, res) => {
+// DELETE - Excluir galeria (protegido)
+app.delete('/api/galerias/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   
   db.run('DELETE FROM galerias WHERE id = ?', [id], function(err) {
@@ -762,8 +926,8 @@ app.get('/api/galeria-itens/:id', (req, res) => {
   });
 });
 
-// POST - Adicionar item à galeria
-app.post('/api/galerias/:galeriaId/itens', upload.single('imagem'), (req, res) => {
+// POST - Adicionar item à galeria (protegido)
+app.post('/api/galerias/:galeriaId/itens', requireAuth, upload.single('imagem'), (req, res) => {
   const { galeriaId } = req.params;
   const { titulo, descricao, ordem } = req.body;
   
@@ -791,8 +955,8 @@ app.post('/api/galerias/:galeriaId/itens', upload.single('imagem'), (req, res) =
   });
 });
 
-// PUT - Atualizar item da galeria
-app.put('/api/galeria-itens/:id', upload.single('imagem'), (req, res) => {
+// PUT - Atualizar item da galeria (protegido)
+app.put('/api/galeria-itens/:id', requireAuth, upload.single('imagem'), (req, res) => {
   const { id } = req.params;
   const { titulo, descricao, ordem } = req.body;
   
@@ -836,8 +1000,8 @@ app.put('/api/galeria-itens/:id', upload.single('imagem'), (req, res) => {
   });
 });
 
-// DELETE - Excluir item da galeria
-app.delete('/api/galeria-itens/:id', (req, res) => {
+// DELETE - Excluir item da galeria (protegido)
+app.delete('/api/galeria-itens/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   
   db.run('DELETE FROM galeria_itens WHERE id = ?', [id], function(err) {
@@ -895,8 +1059,8 @@ app.get('/api/carrossel/:id', (req, res) => {
   });
 });
 
-// POST - Criar slide do carrossel
-app.post('/api/carrossel', upload.single('imagem'), (req, res) => {
+// POST - Criar slide do carrossel (protegido)
+app.post('/api/carrossel', requireAuth, upload.single('imagem'), (req, res) => {
   const { titulo, ordem, ativo } = req.body;
   
   if (!req.file) {
@@ -923,8 +1087,8 @@ app.post('/api/carrossel', upload.single('imagem'), (req, res) => {
   });
 });
 
-// PUT - Atualizar slide do carrossel
-app.put('/api/carrossel/:id', upload.single('imagem'), (req, res) => {
+// PUT - Atualizar slide do carrossel (protegido)
+app.put('/api/carrossel/:id', requireAuth, upload.single('imagem'), (req, res) => {
   const { id } = req.params;
   const { titulo, ordem, ativo } = req.body;
   
@@ -961,8 +1125,8 @@ app.put('/api/carrossel/:id', upload.single('imagem'), (req, res) => {
   });
 });
 
-// DELETE - Excluir slide do carrossel
-app.delete('/api/carrossel/:id', (req, res) => {
+// DELETE - Excluir slide do carrossel (protegido)
+app.delete('/api/carrossel/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   
   db.run('DELETE FROM carrossel WHERE id = ?', [id], function(err) {
@@ -1127,8 +1291,8 @@ app.get('/api/configuracoes/:chave', (req, res) => {
   });
 });
 
-// POST - Criar configuração
-app.post('/api/configuracoes', (req, res) => {
+// POST - Criar configuração (protegido)
+app.post('/api/configuracoes', requireAuth, (req, res) => {
   const { chave, valor, tipo, descricao } = req.body;
   
   const query = `
@@ -1149,8 +1313,8 @@ app.post('/api/configuracoes', (req, res) => {
   });
 });
 
-// PUT - Atualizar múltiplas configurações de uma vez
-app.put('/api/configuracoes', (req, res) => {
+// PUT - Atualizar múltiplas configurações de uma vez (protegido)
+app.put('/api/configuracoes', requireAuth, (req, res) => {
   const configuracoes = req.body;
   
   // Preparar promises para atualizar cada configuração
@@ -1198,8 +1362,8 @@ app.put('/api/configuracoes', (req, res) => {
     });
 });
 
-// PUT - Atualizar configuração individual
-app.put('/api/configuracoes/:id', (req, res) => {
+// PUT - Atualizar configuração individual (protegido)
+app.put('/api/configuracoes/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   const { chave, valor, tipo, descricao } = req.body;
   
@@ -1225,8 +1389,8 @@ app.put('/api/configuracoes/:id', (req, res) => {
   });
 });
 
-// DELETE - Excluir configuração
-app.delete('/api/configuracoes/:id', (req, res) => {
+// DELETE - Excluir configuração (protegido)
+app.delete('/api/configuracoes/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   
   db.run('DELETE FROM configuracoes WHERE id = ?', [id], function(err) {
@@ -1245,8 +1409,8 @@ app.delete('/api/configuracoes/:id', (req, res) => {
   });
 });
 
-// POST - Upload de logos (navbar e footer)
-app.post('/api/configuracoes/upload-logos', upload.fields([
+// POST - Upload de logos (navbar e footer) (protegido)
+app.post('/api/configuracoes/upload-logos', requireAuth, upload.fields([
   { name: 'navbarLogo', maxCount: 1 },
   { name: 'footerLogo', maxCount: 1 }
 ]), (req, res) => {
@@ -1313,8 +1477,8 @@ app.post('/api/configuracoes/upload-logos', upload.fields([
   }
 });
 
-// Rota para admin
-app.get('/admin', (req, res) => {
+// Rota para admin (protegida com autenticação)
+app.get('/admin', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -1698,8 +1862,8 @@ app.get('/api/regulamento/:id', (req, res) => {
   });
 });
 
-// POST - Criar novo regulamento
-app.post('/api/regulamento', upload.single('arquivo_pdf'), (req, res) => {
+// POST - Criar novo regulamento (protegido)
+app.post('/api/regulamento', requireAuth, upload.single('arquivo_pdf'), (req, res) => {
   const { titulo, subtitulo, conteudo, ano, ativo } = req.body;
   const arquivo_pdf = req.file ? `/uploads/${req.file.filename}` : null;
   
@@ -1727,8 +1891,8 @@ app.post('/api/regulamento', upload.single('arquivo_pdf'), (req, res) => {
   });
 });
 
-// PUT - Atualizar regulamento
-app.put('/api/regulamento/:id', upload.single('arquivo_pdf'), (req, res) => {
+// PUT - Atualizar regulamento (protegido)
+app.put('/api/regulamento/:id', requireAuth, upload.single('arquivo_pdf'), (req, res) => {
   const { titulo, subtitulo, conteudo, ano, ativo } = req.body;
   const arquivo_pdf = req.file ? `/uploads/${req.file.filename}` : null;
   
@@ -1773,8 +1937,8 @@ app.put('/api/regulamento/:id', upload.single('arquivo_pdf'), (req, res) => {
   });
 });
 
-// DELETE - Excluir regulamento
-app.delete('/api/regulamento/:id', (req, res) => {
+// DELETE - Excluir regulamento (protegido)
+app.delete('/api/regulamento/:id', requireAuth, (req, res) => {
   const query = 'DELETE FROM regulamento WHERE id = ?';
   
   db.run(query, [req.params.id], function(err) {

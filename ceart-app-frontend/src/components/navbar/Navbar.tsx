@@ -47,6 +47,15 @@ const Navbar = () => {
         <Link to="/galeria" onClick={closeMenu}>Galeria</Link>
         <Link to="/contato" onClick={closeMenu}>Contato</Link>
         <Link to="/regulamento" onClick={closeMenu}>Regulamento</Link>
+        <a 
+          href={import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001'} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="navbar-admin-link"
+          onClick={closeMenu}
+        >
+          <i className="fas fa-lock"></i> Admin
+        </a>
       </div>
 
       <button 

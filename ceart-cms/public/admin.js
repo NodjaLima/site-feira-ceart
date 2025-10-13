@@ -11,6 +11,9 @@ let regulamentos = [];
 // ===================== INICIALIZAÇÃO =====================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Carregar informações do usuário
+    loadUserInfo();
+    
     loadStats();
     loadExpositores();
     loadPosts();
@@ -20,6 +23,48 @@ document.addEventListener('DOMContentLoaded', function() {
     loadConfiguracoes();
     setupForms();
 });
+
+// ===================== AUTENTICAÇÃO =====================
+
+async function loadUserInfo() {
+    try {
+        const response = await fetch(`${API_BASE}/auth/check`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('userName').textContent = data.user.name || data.user.username;
+            document.getElementById('userRole').textContent = data.user.role === 'admin' ? 'Administrador' : data.user.role;
+        } else {
+            // Não autenticado, redirecionar para login
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        window.location.href = '/login';
+    }
+}
+
+async function logout() {
+    if (!confirm('Deseja realmente sair?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+        alert('Erro ao fazer logout. Tente novamente.');
+    }
+}
 
 // ===================== FUNÇÕES DE NAVEGAÇÃO =====================
 
@@ -1483,3 +1528,4 @@ window.deleteCarrossel = deleteCarrossel;
 window.saveConfiguracoes = saveConfiguracoes;
 window.previewImage = previewImage;
 window.removeGaleriaPreview = removeGaleriaPreview;
+window.logout = logout;

@@ -38,6 +38,24 @@
   text-decoration: none;
 }
 
+/* Estilo especial para o link do Admin */
+.navbar-admin-link {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-admin-link:hover {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.navbar-admin-link i {
+  font-size: 0.9rem;
+}
+
 .navbar-hamburger {
   display: none;
   flex-direction: column;
