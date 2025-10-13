@@ -90,7 +90,7 @@ module.exports = {
     {
       galeria_id: 1,
       titulo: 'Móveis Rústicos',
-      descricao: 'Móveis artesanais em madeira sustentável',
+      descricao: 'Mobiliário artesanal em madeira sustentável',
       imagem: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',
       ordem: 2
     },
@@ -108,6 +108,34 @@ module.exports = {
       imagem: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800',
       ordem: 4
     },
+    {
+      galeria_id: 1,
+      titulo: 'Arte em Couro',
+      descricao: 'Bolsas e acessórios em couro legítimo',
+      imagem: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800',
+      ordem: 5
+    },
+    {
+      galeria_id: 1,
+      titulo: 'Pinturas em Tela',
+      descricao: 'Obras de arte de artistas locais',
+      imagem: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800',
+      ordem: 6
+    },
+    {
+      galeria_id: 1,
+      titulo: 'Bordados Tradicionais',
+      descricao: 'Bordados à mão com técnicas ancestrais',
+      imagem: 'https://images.unsplash.com/photo-1605106702734-205df224ecce?w=800',
+      ordem: 7
+    },
+    {
+      galeria_id: 1,
+      titulo: 'Macramê Contemporâneo',
+      descricao: 'Peças decorativas em macramê moderno',
+      imagem: 'https://images.unsplash.com/photo-1551058622-6954cb50b144?w=800',
+      ordem: 8
+    },
     // Itens da Feira 2024 (galeria_id: 2)
     {
       galeria_id: 2,
@@ -122,6 +150,34 @@ module.exports = {
       descricao: 'Arte em pedra sabão mineira',
       imagem: 'https://images.unsplash.com/photo-1544967890-1ad5dbaac10d?w=800',
       ordem: 2
+    },
+    {
+      galeria_id: 2,
+      titulo: 'Tapetes Artesanais',
+      descricao: 'Tapetes feitos à mão com lã natural',
+      imagem: 'https://images.unsplash.com/photo-1600166898405-da9535204843?w=800',
+      ordem: 3
+    },
+    {
+      galeria_id: 2,
+      titulo: 'Velas Aromáticas',
+      descricao: 'Velas artesanais com essências naturais',
+      imagem: 'https://images.unsplash.com/photo-1602874801006-96e1526dffac?w=800',
+      ordem: 4
+    },
+    {
+      galeria_id: 2,
+      titulo: 'Sabonetes Naturais',
+      descricao: 'Sabonetes artesanais com ingredientes orgânicos',
+      imagem: 'https://images.unsplash.com/photo-1617897903246-719242758050?w=800',
+      ordem: 5
+    },
+    {
+      galeria_id: 2,
+      titulo: 'Instrumentos Musicais',
+      descricao: 'Instrumentos artesanais feitos à mão',
+      imagem: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800',
+      ordem: 6
     }
   ],
   posts: [

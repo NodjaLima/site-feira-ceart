@@ -32,34 +32,57 @@
 }
 
 /* Info da galeria selecionada */
-.galeria-info {
+.galeria-info-section {
   background: white;
-  padding: 30px;
-  border-radius: 12px;
-  margin-bottom: 40px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  padding: 40px;
+  border-radius: 16px;
+  margin-bottom: 50px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-left: 5px solid #4CAF50;
 }
 
-.galeria-info h2 {
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 15px;
-  font-weight: bold;
+.galeria-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
-.galeria-info p {
-  font-size: 1.1rem;
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 10px;
+.galeria-info-title {
+  font-size: 2.2rem;
+  color: #2C3E50;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
-.galeria-date {
+.galeria-info-date {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 25px;
   font-size: 1rem;
-  color: #4CAF50;
-  font-weight: 500;
-  margin-top: 10px;
+  font-weight: 600;
+  box-shadow: 0 3px 12px rgba(76, 175, 80, 0.3);
+}
+
+.calendar-icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.galeria-info-description {
+  font-size: 1.15rem;
+  color: #5A6C7D;
+  line-height: 1.8;
+  margin: 0;
+  text-align: left;
 }
 
 /* Seletor de Galerias */
@@ -68,35 +91,58 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 15px;
-  margin-bottom: 40px;
+  margin-bottom: 50px;
 }
 
 .filter-btn {
   background: white;
   color: #4CAF50;
   border: 2px solid #4CAF50;
-  padding: 12px 30px;
+  padding: 15px 35px;
   border-radius: 30px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 1rem;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 180px;
+}
+
+.filter-btn-title {
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.filter-btn-date {
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.8;
+  letter-spacing: 0.3px;
 }
 
 .filter-btn:hover {
   background: #e8f5e9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.25);
+  border-color: #66BB6A;
 }
 
 .filter-btn.active {
-  background: #4CAF50;
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
   color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+  border-color: transparent;
+}
+
+.filter-btn.active .filter-btn-date {
+  opacity: 1;
 }
 
 /* Grid da galeria */
@@ -312,12 +358,43 @@
   }
   
   .galeria-filters {
-    gap: 8px;
+    gap: 10px;
   }
   
   .filter-btn {
-    padding: 8px 15px;
+    padding: 12px 25px;
+    font-size: 0.9rem;
+    min-width: 150px;
+  }
+  
+  .filter-btn-title {
+    font-size: 0.95rem;
+  }
+  
+  .filter-btn-date {
     font-size: 0.8rem;
+  }
+  
+  .galeria-info-section {
+    padding: 25px;
+  }
+  
+  .galeria-info-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .galeria-info-title {
+    font-size: 1.8rem;
+  }
+  
+  .galeria-info-date {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+  
+  .galeria-info-description {
+    font-size: 1rem;
   }
   
   .galeria-modal-content {
@@ -367,8 +444,40 @@
   }
   
   .filter-btn {
-    padding: 6px 12px;
+    padding: 10px 20px;
+    font-size: 0.85rem;
+    min-width: 140px;
+  }
+  
+  .filter-btn-title {
+    font-size: 0.85rem;
+  }
+  
+  .filter-btn-date {
     font-size: 0.75rem;
+  }
+  
+  .galeria-info-section {
+    padding: 20px;
+    border-left-width: 3px;
+  }
+  
+  .galeria-info-title {
+    font-size: 1.5rem;
+  }
+  
+  .galeria-info-date {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+  
+  .calendar-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .galeria-info-description {
+    font-size: 0.95rem;
   }
   
   .modal-nav {

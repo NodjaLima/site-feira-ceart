@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { apiService, Galeria as GaleriaType, GaleriaItem } from '../services/apiService';
 import './Galeria.css';
 
+// URL base da API
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://site-feira-ceart-production.up.railway.app/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', ''); // Remove /api para obter a URL base do backend
+
+// Helper para construir URL completa da imagem
+const getImageUrl = (imagePath: string) => {
+  // Se já for uma URL completa (http/https), retorna como está
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  // Se for um caminho relativo, adiciona a URL base do backend
+  return `${BACKEND_BASE_URL}${imagePath}`;
+};
+
 const Galeria: React.FC = () => {
   const [galerias, setGalerias] = useState<GaleriaType[]>([]);
   const [selectedGaleria, setSelectedGaleria] = useState<GaleriaType | null>(null);
@@ -119,20 +133,45 @@ const Galeria: React.FC = () => {
               onClick={() => handleGaleriaChange(galeria)}
               className={`filter-btn ${selectedGaleria?.id === galeria.id ? 'active' : ''}`}
             >
-              {galeria.titulo}
+              <span className="filter-btn-title">{galeria.titulo}</span>
+              {galeria.data_evento && (
+                <span className="filter-btn-date">
+                  {new Date(galeria.data_evento).toLocaleDateString('pt-BR', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                  })}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
         {/* Descrição da galeria selecionada */}
         {selectedGaleria && (
-          <div className="galeria-info">
-            <h2>{selectedGaleria.titulo}</h2>
-            {selectedGaleria.descricao && <p>{selectedGaleria.descricao}</p>}
-            {selectedGaleria.data_evento && (
-              <p className="galeria-date">
-                Data do evento: {new Date(selectedGaleria.data_evento).toLocaleDateString('pt-BR')}
-              </p>
+          <div className="galeria-info-section">
+            <div className="galeria-info-header">
+              <h2 className="galeria-info-title">{selectedGaleria.titulo}</h2>
+              {selectedGaleria.data_evento && (
+                <div className="galeria-info-date">
+                  <svg className="calendar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="6" width="18" height="15" rx="2" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M3 10H21" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M7 3V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M17 3V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  <span>
+                    {new Date(selectedGaleria.data_evento).toLocaleDateString('pt-BR', { 
+                      day: 'numeric',
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+            {selectedGaleria.descricao && (
+              <p className="galeria-info-description">{selectedGaleria.descricao}</p>
             )}
           </div>
         )}
@@ -145,7 +184,7 @@ const Galeria: React.FC = () => {
               className="galeria-item"
               onClick={() => openModal(item)}
             >
-              <img src={item.imagem} alt={item.titulo || 'Imagem da galeria'} />
+              <img src={getImageUrl(item.imagem)} alt={item.titulo || 'Imagem da galeria'} />
               <div className="galeria-item-overlay">
                 <h3>{item.titulo || 'Sem título'}</h3>
                 {item.descricao && <p>{item.descricao}</p>}
@@ -180,7 +219,7 @@ const Galeria: React.FC = () => {
               </button>
             )}
             
-            <img src={selectedImage.imagem} alt={selectedImage.titulo || 'Imagem'} />
+            <img src={getImageUrl(selectedImage.imagem)} alt={selectedImage.titulo || 'Imagem'} />
             <div className="modal-info">
               <h3>{selectedImage.titulo || 'Sem título'}</h3>
               {selectedImage.descricao && (

@@ -7,6 +7,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://localhost:3001', // Admin Panel
   'https://feiraceart.vercel.app', // Substitua pelo seu domínio Vercel
   /https:\/\/.*\.vercel\.app$/, // Permite todos os preview deploys da Vercel
 ];
