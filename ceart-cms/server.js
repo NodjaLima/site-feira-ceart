@@ -74,11 +74,13 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'ceart-cms-secret-key-2025',
   resave: false,
   saveUninitialized: false,
+  proxy: true, // Confiar no proxy do Railway
   cookie: {
     secure: process.env.NODE_ENV === 'production', // HTTPS em produção
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Permitir cross-site em produção
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax', // lax em produção (mesmo domínio)
+    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    domain: process.env.COOKIE_DOMAIN || undefined // Permitir configurar domínio
   }
 }));
 
@@ -313,17 +315,26 @@ db.serialize(() => {
 
 // Middleware para verificar se o usuário está autenticado
 const requireAuth = (req, res, next) => {
+  console.log('🔐 Auth check:', {
+    path: req.path,
+    hasSession: !!req.session,
+    sessionId: req.sessionID,
+    userId: req.session?.userId
+  });
+  
   if (req.session && req.session.userId) {
     return next();
   }
   
   // Se for uma requisição da API, retornar 401
   if (req.path.startsWith('/api/')) {
+    console.log('❌ API sem autenticação:', req.path);
     return res.status(401).json({ error: 'Não autenticado' });
   }
   
   // Se for uma requisição normal, redirecionar para login (apenas se não estiver já no login)
   if (req.path !== '/login') {
+    console.log('↩️  Redirecionando para /login');
     return res.redirect('/login');
   }
   
@@ -375,11 +386,19 @@ app.post('/api/auth/login', async (req, res) => {
         // Salvar sessão antes de responder
         req.session.save((err) => {
           if (err) {
-            console.error('Erro ao salvar sessão:', err);
+            console.error('❌ Erro ao salvar sessão:', err);
             return res.status(500).json({ error: 'Erro ao salvar sessão' });
           }
           
           console.log('✅ Login bem-sucedido:', user.username);
+          console.log('📝 Session ID:', req.sessionID);
+          console.log('🍪 Cookie config:', {
+            secure: req.session.cookie.secure,
+            httpOnly: req.session.cookie.httpOnly,
+            sameSite: req.session.cookie.sameSite,
+            domain: req.session.cookie.domain
+          });
+          
           res.json({
             success: true,
             user: {
