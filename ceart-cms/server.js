@@ -2018,35 +2018,61 @@ app.delete('/api/regulamento/:id', requireAuth, (req, res) => {
 // ==================== CONFIGURAÇÃO DE EMAIL ====================
 
 // Validar configuração de email ao iniciar o servidor
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-  console.warn('⚠️  AVISO: Variáveis EMAIL_USER e/ou EMAIL_PASS não configuradas!');
+const hasExplicitSMTP = process.env.SMTP_SERVER && process.env.SMTP_PORT && process.env.MAIL_USERNAME && process.env.MAIL_PASSWORD;
+const hasSimpleConfig = process.env.EMAIL_USER && process.env.EMAIL_PASS;
+
+if (!hasExplicitSMTP && !hasSimpleConfig) {
+  console.warn('⚠️  AVISO: Configuração de email não encontrada!');
+  console.warn('⚠️  Configure uma das opções:');
+  console.warn('⚠️  1. SMTP_SERVER, SMTP_PORT, MAIL_USERNAME, MAIL_PASSWORD (recomendado)');
+  console.warn('⚠️  2. EMAIL_USER, EMAIL_PASS (fallback)');
   console.warn('⚠️  O envio de emails do formulário de contato não funcionará.');
-  console.warn('⚠️  Configure as variáveis de ambiente para ativar esta funcionalidade.');
 }
 
-// Configurar transportador de email (apenas se as credenciais existirem)
+// Configurar transportador de email com configuração SMTP explícita
 let transporter = null;
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+
+// Preferir configuração SMTP explícita, fallback para configuração simples
+const useExplicitSMTP = process.env.SMTP_SERVER && process.env.SMTP_PORT && process.env.MAIL_USERNAME && process.env.MAIL_PASSWORD;
+const useSimpleConfig = process.env.EMAIL_USER && process.env.EMAIL_PASS;
+
+if (useExplicitSMTP) {
+  // Configuração SMTP explícita (recomendada para Railway)
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_SERVER,
+    port: parseInt(process.env.SMTP_PORT),
+    secure: process.env.SMTP_PORT === '465' ? true : false, // true para 465, false para 587
+    auth: {
+      user: process.env.MAIL_USERNAME,
+      pass: process.env.MAIL_PASSWORD,
+    },
+    // Timeouts otimizados para produção
+    connectionTimeout: 15000, // 15 segundos para conectar
+    greetingTimeout: 15000,   // 15 segundos para greeting
+    socketTimeout: 20000      // 20 segundos para operações
+  });
+  console.log(`✉️  Transportador SMTP configurado: ${process.env.SMTP_SERVER}:${process.env.SMTP_PORT}`);
+} else if (useSimpleConfig) {
+  // Fallback para configuração simples
   transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
-    // Configurações de timeout balanceadas para produção
-    connectionTimeout: 12000, // 12 segundos para conectar
-    greetingTimeout: 12000,   // 12 segundos para greeting
-    socketTimeout: 18000      // 18 segundos para operações
+    connectionTimeout: 12000,
+    greetingTimeout: 12000,
+    socketTimeout: 18000
   });
-  console.log('✉️  Transportador de email configurado com sucesso');
+  console.log('✉️  Transportador Gmail configurado (fallback)');
 }
 
 // Rota para enviar email do formulário de contato
 app.post('/api/contato/enviar', async (req, res) => {
   try {
     // Verificar se o email está configurado
-    if (!transporter || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('❌ Tentativa de envio de email sem configuração adequada');
+    if (!transporter) {
+      console.error('❌ Tentativa de envio de email sem transportador configurado');
       return res.status(503).json({ 
         success: false, 
         message: 'Serviço de email temporariamente indisponível. Entre em contato pelos canais alternativos.' 
@@ -2082,9 +2108,11 @@ app.post('/api/contato/enviar', async (req, res) => {
     console.log(`📧 Preparando envio de email para: ${emailDestino}`);
 
     // Configurar opções do email
+    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USERNAME || process.env.EMAIL_USER;
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"${nome}" <${fromEmail}>`, // Email autenticado do servidor, mas com nome do usuário
       to: emailDestino,
+      replyTo: email, // Respostas vão para o email do usuário do formulário
       subject: `📧 Novo contato do site - ${nome}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -2096,11 +2124,11 @@ app.post('/api/contato/enviar', async (req, res) => {
             ${mensagem ? `<p><strong>Mensagem:</strong></p><p style="white-space: pre-wrap;">${mensagem}</p>` : ''}
           </div>
           <p style="color: #7f8c8d; font-size: 12px;">
-            Este email foi enviado automaticamente através do formulário de contato do site Feira CEART.
+            Este email foi enviado automaticamente através do formulário de contato do site Feira CEART.<br>
+            Para responder, use o botão "Responder" - sua resposta irá para: ${email}
           </p>
         </div>
-      `,
-      replyTo: email
+      `
     };
 
     // Enviar email
