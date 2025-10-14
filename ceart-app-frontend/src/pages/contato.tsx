@@ -85,36 +85,6 @@ const Contato = () => {
 
       {/* Seção de Contato Principal */}
       <ContatoSection />
-
-      {/* FAQ Section */}
-      <section className="faq-section">
-        <div className="container">
-          <h2>Perguntas Frequentes</h2>
-          <div className="faq-grid">
-            <div className="faq-item">
-              <h4>Como posso me inscrever como expositor?</h4>
-              <p>Preencha o formulário de contato acima informando seu interesse em participar como expositor. Nossa equipe entrará em contato com todas as informações necessárias.</p>
-            </div>
-            
-            <div className="faq-item">
-              <h4>Qual é o valor da participação?</h4>
-              <p>Os valores variam conforme o tipo de estande e localização. Entre em contato conosco para receber uma tabela completa de preços e condições especiais.</p>
-            </div>
-            
-            <div className="faq-item">
-              <h4>Quando acontece a próxima feira?</h4>
-              <p>A Feira CEART acontece trimestralmente. Consulte nosso calendário de eventos ou entre em contato para saber as próximas datas.</p>
-            </div>
-            
-            <div className="faq-item">
-              <h4>Que tipo de artesanato pode participar?</h4>
-              <p>Aceitamos todos os tipos de artesanato tradicional: cerâmica, marcenaria, têxtil, ourivesaria, bordados, esculturas e muito mais.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
     </div>
   );
 };
