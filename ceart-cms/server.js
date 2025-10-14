@@ -1,3 +1,6 @@
+// Carregar variáveis de ambiente do arquivo .env
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -2004,18 +2007,38 @@ app.delete('/api/regulamento/:id', requireAuth, (req, res) => {
 
 // ==================== CONFIGURAÇÃO DE EMAIL ====================
 
-// Configurar transportador de email
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'feiraceart@gmail.com',
-    pass: process.env.EMAIL_PASS // Senha de app do Gmail
-  }
-});
+// Validar configuração de email ao iniciar o servidor
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  console.warn('⚠️  AVISO: Variáveis EMAIL_USER e/ou EMAIL_PASS não configuradas!');
+  console.warn('⚠️  O envio de emails do formulário de contato não funcionará.');
+  console.warn('⚠️  Configure as variáveis de ambiente para ativar esta funcionalidade.');
+}
+
+// Configurar transportador de email (apenas se as credenciais existirem)
+let transporter = null;
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+  console.log('✉️  Transportador de email configurado com sucesso');
+}
 
 // Rota para enviar email do formulário de contato
 app.post('/api/contato/enviar', async (req, res) => {
   try {
+    // Verificar se o email está configurado
+    if (!transporter || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error('❌ Tentativa de envio de email sem configuração adequada');
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Serviço de email temporariamente indisponível. Entre em contato pelos canais alternativos.' 
+      });
+    }
+
     const { nome, email, telefone, mensagem } = req.body;
 
     // Validações
@@ -2035,7 +2058,8 @@ app.post('/api/contato/enviar', async (req, res) => {
           if (!err && row && row.valor) {
             resolve(row.valor);
           } else {
-            resolve(process.env.EMAIL_USER || 'feiraceart@gmail.com');
+            // Se não houver configuração no CMS, usa o EMAIL_USER como destino
+            resolve(process.env.EMAIL_USER);
           }
         }
       );
@@ -2045,7 +2069,7 @@ app.post('/api/contato/enviar', async (req, res) => {
 
     // Configurar opções do email
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'feiraceart@gmail.com',
+      from: process.env.EMAIL_USER,
       to: emailDestino,
       subject: `📧 Novo contato do site - ${nome}`,
       html: `

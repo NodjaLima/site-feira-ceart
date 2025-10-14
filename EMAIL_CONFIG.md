@@ -15,17 +15,19 @@ Quando um visitante preenche o formulário de contato no site, um email é envia
 
 ## 🔧 Configuração
 
+⚠️ **IMPORTANTE:** Tanto `EMAIL_USER` quanto `EMAIL_PASS` são variáveis de ambiente **OBRIGATÓRIAS**. Sem elas, o sistema não enviará emails.
+
 ### 1. Criar Senha de App do Gmail
 
 Como o Gmail exige autenticação de dois fatores para aplicativos, você precisa gerar uma **Senha de App**:
 
-1. Acesse sua conta do Gmail (feiraceart@gmail.com)
+1. Acesse sua conta do Gmail (ex: feiraceart@gmail.com)
 2. Vá para: **Conta do Google** → **Segurança**
 3. Certifique-se de que a **Verificação em duas etapas** está ativada
-4. Procure por **Senhas de app** (App Passwords)
+4. Procure por **Senhas de app** (App Passwords) ou acesse: https://myaccount.google.com/apppasswords
 5. Selecione **Outro (nome personalizado)** e digite: `Site Feira CEART`
 6. Clique em **Gerar**
-7. **Copie a senha gerada** (16 caracteres sem espaços)
+7. **Copie a senha gerada** (16 caracteres sem espaços, formato: `abcdefghijklmnop`)
 
 ### 2. Configurar Variáveis de Ambiente
 
@@ -34,17 +36,23 @@ Como o Gmail exige autenticação de dois fatores para aplicativos, você precis
 Crie um arquivo `.env` na pasta `ceart-cms/` com:
 
 ```bash
-EMAIL_USER=feiraceart@gmail.com
-EMAIL_PASS=sua_senha_de_app_aqui
+EMAIL_USER=seu_email@gmail.com
+EMAIL_PASS=abcdefghijklmnop
 ```
+
+**Substitua:**
+- `seu_email@gmail.com` pelo email real que enviará os emails
+- `abcdefghijklmnop` pela senha de app de 16 caracteres que você gerou
 
 #### Produção (Railway)
 
 1. Acesse o projeto no Railway
 2. Vá em **Variables**
-3. Adicione as seguintes variáveis:
-   - `EMAIL_USER` = `feiraceart@gmail.com`
+3. Adicione as seguintes variáveis (ambas são **OBRIGATÓRIAS**):
+   - `EMAIL_USER` = `seu_email@gmail.com`
    - `EMAIL_PASS` = `sua_senha_de_app_de_16_caracteres`
+
+⚠️ **Sem estas variáveis configuradas, o servidor iniciará mas o formulário de contato retornará erro 503 (serviço indisponível) ao tentar enviar emails.**
 
 ### 3. Testar Localmente
 
