@@ -1,7 +1,37 @@
+import { useState, useEffect } from "react";
 import ContatoSection from "../components/contato-section/ContatoSection";
 import "./Contato.css";
+import { apiService } from "../services/apiService";
+
+interface SiteConfig {
+  site_email: string;
+  site_phone: string;
+  site_address: string;
+}
 
 const Contato = () => {
+  const [config, setConfig] = useState<SiteConfig>({
+    site_email: 'contato@feiraceart.com.br',
+    site_phone: '(11) 9999-9999',
+    site_address: 'São Paulo, SP',
+  });
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const siteInfo = await apiService.getInfoSite();
+        setConfig({
+          site_email: siteInfo.site_email,
+          site_phone: siteInfo.site_phone,
+          site_address: siteInfo.site_address,
+        });
+      } catch (error) {
+        console.error('Erro ao carregar configurações de contato:', error);
+      }
+    };
+    loadConfig();
+  }, []);
+
   return (
     <div className="contato-page">
       {/* Hero Section */}
@@ -19,25 +49,25 @@ const Contato = () => {
             <div className="info-card">
               <div className="info-icon">📍</div>
               <h3>Localização</h3>
-              <p>Centro de Eventos CEART<br />
-                 Rua das Artes, 123<br />
-                 São Paulo - SP, 01234-567</p>
+              <p>{config.site_address.split('\n').map((line, i) => (
+                <span key={i}>{line}<br /></span>
+              ))}</p>
             </div>
             
             <div className="info-card">
               <div className="info-icon">📞</div>
               <h3>Telefone</h3>
-              <p>(11) 3456-7890<br />
-                 (11) 99999-9999<br />
-                 Segunda à Sexta: 9h às 18h</p>
+              <p>{config.site_phone.split('\n').map((line, i) => (
+                <span key={i}>{line}<br /></span>
+              ))}</p>
             </div>
             
             <div className="info-card">
               <div className="info-icon">✉️</div>
               <h3>E-mail</h3>
-              <p>contato@feiraceart.com.br<br />
-                 expositores@feiraceart.com.br<br />
-                 Resposta em até 24h</p>
+              <p>{config.site_email.split('\n').map((line, i) => (
+                <span key={i}>{line}<br /></span>
+              ))}</p>
             </div>
             
             <div className="info-card">
@@ -84,44 +114,7 @@ const Contato = () => {
         </div>
       </section>
 
-      {/* Mapa Section */}
-      <section className="mapa-section">
-        <div className="container">
-          <h2>Como Chegar</h2>
-          <div className="mapa-content">
-            <div className="mapa-info">
-              <h3>Localização da Feira</h3>
-              <p>O Centro de Eventos CEART está localizado em uma região de fácil acesso, com amplo estacionamento e próximo ao transporte público.</p>
-              
-              <div className="transporte-info">
-                <h4>Transporte Público:</h4>
-                <ul>
-                  <li>🚇 Estação Metro São Paulo - Linha Verde (500m)</li>
-                  <li>🚌 Linhas de ônibus: 123, 456, 789</li>
-                  <li>🚕 Pontos de táxi e Uber na porta do evento</li>
-                </ul>
-                
-                <h4>Estacionamento:</h4>
-                <ul>
-                  <li>🅿️ 200 vagas gratuitas para visitantes</li>
-                  <li>🅿️ Estacionamento coberto disponível</li>
-                  <li>♿ Vagas preferenciais para PCD</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="mapa-placeholder">
-              <div className="mapa-frame">
-                <p>🗺️ Mapa Interativo</p>
-                <p>Centro de Eventos CEART<br />
-                   Rua das Artes, 123<br />
-                   São Paulo - SP</p>
-                <button className="mapa-btn">Ver no Google Maps</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+
     </div>
   );
 };

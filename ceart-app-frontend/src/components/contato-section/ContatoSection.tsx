@@ -1,6 +1,36 @@
+import { useState, useEffect } from "react";
 import "./ContatoSection.css";
+import { apiService } from "../../services/apiService";
+
+interface SiteConfig {
+  site_email: string;
+  site_phone: string;
+  site_address: string;
+}
 
 const ContatoSection = () => {
+  const [config, setConfig] = useState<SiteConfig>({
+    site_email: 'contato@feiraceart.com.br',
+    site_phone: '(11) 9999-9999',
+    site_address: 'São Paulo, SP',
+  });
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const siteInfo = await apiService.getInfoSite();
+        setConfig({
+          site_email: siteInfo.site_email,
+          site_phone: siteInfo.site_phone,
+          site_address: siteInfo.site_address,
+        });
+      } catch (error) {
+        console.error('Erro ao carregar configurações de contato:', error);
+      }
+    };
+    loadConfig();
+  }, []);
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Aqui você pode adicionar a lógica para enviar o formulário
@@ -22,15 +52,15 @@ const ContatoSection = () => {
             <h3>Informações de Contato</h3>
             <div className="info-item">
               <i className="icon-phone"></i>
-              <span>(11) 9999-9999</span>
+              <span>{config.site_phone}</span>
             </div>
             <div className="info-item">
               <i className="icon-email"></i>
-              <span>contato@feiraceart.com.br</span>
+              <span>{config.site_email}</span>
             </div>
             <div className="info-item">
               <i className="icon-location"></i>
-              <span>São Paulo, SP</span>
+              <span>{config.site_address}</span>
             </div>
           </div>
           
