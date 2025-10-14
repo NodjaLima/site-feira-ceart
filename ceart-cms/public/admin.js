@@ -110,20 +110,23 @@ window.onclick = function(event) {
 
 async function loadStats() {
     try {
-        const [expositoresRes, postsRes, galeriaItensRes, carrosselRes] = await Promise.all([
+        const [expositoresRes, postsRes, galeriasRes, galeriaItensRes, carrosselRes] = await Promise.all([
             fetch(`${API_BASE}/expositores`),
             fetch(`${API_BASE}/posts`),
+            fetch(`${API_BASE}/galerias`),
             fetch(`${API_BASE}/galeria-itens/stats/count`),
             fetch(`${API_BASE}/carrossel`)
         ]);
         
         const expositoresData = await expositoresRes.json();
         const postsData = await postsRes.json();
+        const galeriasData = await galeriasRes.json();
         const galeriaItensData = await galeriaItensRes.json();
         const carrosselData = await carrosselRes.json();
         
         const totalExpositores = Array.isArray(expositoresData) ? expositoresData.length : (expositoresData.data?.length || 0);
         const totalPosts = Array.isArray(postsData) ? postsData.length : (postsData.data?.length || 0);
+        const totalGalerias = Array.isArray(galeriasData) ? galeriasData.length : (galeriasData.data?.length || 0);
         const totalGaleriaImagens = galeriaItensData.total || 0;
         const totalSlides = Array.isArray(carrosselData) ? carrosselData.length : (carrosselData.data?.length || 0);
         
@@ -137,8 +140,12 @@ async function loadStats() {
                 <div class="stat-label">Posts Publicados</div>
             </div>
             <div class="stat-card">
+                <div class="stat-number">${totalGalerias}</div>
+                <div class="stat-label">Galerias Criadas</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-number">${totalGaleriaImagens}</div>
-                <div class="stat-label">Imagens na Galeria</div>
+                <div class="stat-label">Total de Imagens</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number">${totalSlides}</div>
