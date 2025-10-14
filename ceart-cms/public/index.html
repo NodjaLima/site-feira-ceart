@@ -490,6 +490,172 @@
             background: #dc3545;
         }
 
+        /* Estilos para Upload Múltiplo */
+        .upload-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .file-count {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .upload-limits {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .preview-item {
+            position: relative;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .preview-item:hover {
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .preview-image-container {
+            position: relative;
+            aspect-ratio: 1;
+            background: #f8f9fa;
+        }
+
+        .preview-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #6c757d;
+            font-size: 1.5rem;
+        }
+
+        .preview-info {
+            padding: 0.5rem;
+            position: relative;
+        }
+
+        .preview-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #495057;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.25rem;
+        }
+
+        .preview-size {
+            font-size: 0.7rem;
+            color: #6c757d;
+        }
+
+        .btn-remove-preview {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn-remove-preview:hover {
+            background: #dc3545;
+            transform: scale(1.1);
+        }
+
+        .preview-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #e9ecef;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+
+        .progress-container {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .progress-text {
+            color: #495057;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-multiple-input {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px dashed #dee2e6;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .upload-multiple-input:hover {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
+        .upload-multiple-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
         @media (max-width: 768px) {
             .nav-tabs {
                 flex-direction: column;
@@ -822,9 +988,14 @@
                         <h2 class="card-title"><i class="fas fa-images"></i> <span id="galeriaSelectedTitle">Fotos</span></h2>
                         <p class="card-subtitle" id="galeriaSelectedDesc"></p>
                     </div>
-                    <button class="btn btn-primary" onclick="openModal('novaImagemModal')">
-                        <i class="fas fa-plus"></i> Nova Foto
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="openModal('novaImagemModal')">
+                            <i class="fas fa-plus"></i> Nova Foto
+                        </button>
+                        <button class="btn btn-success" onclick="openModal('uploadMultiploModal')">
+                            <i class="fas fa-images"></i> Upload Múltiplo
+                        </button>
+                    </div>
                 </div>
                 <div id="galeriaItensList" class="grid grid-3">
                     <!-- Lista de fotos da galeria -->
@@ -1288,6 +1459,69 @@ Conectando artesãos, empreendedores e a comunidade</textarea>
                     <i class="fas fa-save"></i> Adicionar à Galeria
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal: Upload Múltiplo de Imagens -->
+    <div id="uploadMultiploModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-images"></i> Upload Múltiplo de Fotos</h3>
+                <span class="close" onclick="closeModal('uploadMultiploModal')">&times;</span>
+            </div>
+            <div class="upload-multiplo-content">
+                <div class="upload-info" style="background: #f0f8ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #4CAF50;">
+                    <h4 style="margin: 0 0 8px 0; color: #2c3e50;"><i class="fas fa-info-circle"></i> Upload Múltiplo</h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #666;">
+                        <li>Selecione até <strong>10 imagens</strong> por vez</li>
+                        <li>Formatos aceitos: JPG, PNG, GIF, WebP</li>
+                        <li>As imagens receberão títulos automáticos que podem ser editados depois</li>
+                        <li>Processamento mais rápido para adicionar várias fotos</li>
+                    </ul>
+                </div>
+                
+                <form id="uploadMultiploForm" enctype="multipart/form-data">
+                    <input type="hidden" name="galeria_id" id="galeriaIdMultiplo">
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-images"></i> Selecionar Imagens
+                            <span style="color: #666; font-weight: normal;">(máximo 10)</span>
+                        </label>
+                        <input type="file" class="form-control" name="imagens" accept="image/*" multiple required id="imagensInput">
+                        <div class="file-info" style="font-size: 12px; color: #666; margin-top: 5px;">
+                            <span id="arquivosSelecionados">Nenhum arquivo selecionado</span>
+                        </div>
+                    </div>
+
+                    <!-- Preview das imagens selecionadas -->
+                    <div id="previewContainer" style="display: none; margin: 20px 0;">
+                        <h5 style="margin-bottom: 10px; color: #333;"><i class="fas fa-eye"></i> Preview das Imagens:</h5>
+                        <div id="previewGrid" class="galeria-preview-grid" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Previews serão inseridos aqui -->
+                        </div>
+                    </div>
+
+                    <div class="upload-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('uploadMultiploModal')">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success" id="btnUploadMultiplo">
+                            <i class="fas fa-upload"></i> Fazer Upload (<span id="contadorImagens">0</span> imagens)
+                        </button>
+                    </div>
+
+                    <!-- Barra de progresso -->
+                    <div id="progressoUpload" style="display: none; margin-top: 15px;">
+                        <div style="background: #f0f0f0; border-radius: 10px; overflow: hidden;">
+                            <div id="barraProgresso" style="background: #4CAF50; height: 6px; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <div id="textoProgresso" style="text-align: center; margin-top: 5px; font-size: 14px; color: #666;">
+                            Preparando upload...
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

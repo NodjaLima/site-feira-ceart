@@ -505,11 +505,11 @@ app.post('/api/expositores', requireAuth, upload.fields([
   const { nome, categoria, descricao, cidade, estado, telefone, email, instagram, facebook, whatsapp, site } = req.body;
   
   // Foto de perfil
-  const imagem = req.files?.foto?.[0] ? `/uploads/${req.files.foto[0].filename}` : null;
+  const imagem = (req.files && req.files.foto && req.files.foto[0]) ? `/uploads/${req.files.foto[0].filename}` : null;
   
   // Galeria de imagens
   let galeriaImagens = null;
-  if (req.files?.galeria_fotos && req.files.galeria_fotos.length > 0) {
+  if (req.files && req.files.galeria_fotos && req.files.galeria_fotos.length > 0) {
     const galeriaUrls = req.files.galeria_fotos.map(file => `/uploads/${file.filename}`);
     galeriaImagens = JSON.stringify(galeriaUrls);
   }
@@ -553,8 +553,8 @@ app.put('/api/expositores/:id', requireAuth, upload.fields([
     }
     
     // Processar nova galeria se houver
-    let galeriaImagens = row?.galeria_imagens || null;
-    if (req.files?.galeria_fotos && req.files.galeria_fotos.length > 0) {
+    let galeriaImagens = (row && row.galeria_imagens) ? row.galeria_imagens : null;
+    if (req.files && req.files.galeria_fotos && req.files.galeria_fotos.length > 0) {
       let galeriaAtual = [];
       if (galeriaImagens) {
         try {
@@ -578,7 +578,7 @@ app.put('/api/expositores/:id', requireAuth, upload.fields([
     let params = [nome, categoria, descricao, contato, telefone, email, site, instagram, facebook, whatsapp, galeriaImagens, id];
     
     // Se houver nova foto de perfil, incluir na query
-    if (req.files?.foto?.[0]) {
+    if (req.files && req.files.foto && req.files.foto[0]) {
       const imagem = `/uploads/${req.files.foto[0].filename}`;
       query = `
         UPDATE expositores 
@@ -1024,6 +1024,69 @@ app.post('/api/galerias/:galeriaId/itens', requireAuth, upload.single('imagem'),
       success: true, 
       id: this.lastID,
       message: 'Item adicionado à galeria com sucesso!' 
+    });
+  });
+});
+
+// POST - Upload múltiplo de imagens para galeria (protegido)
+app.post('/api/galerias/:galeriaId/itens/bulk', requireAuth, upload.array('imagens', 10), (req, res) => {
+  const { galeriaId } = req.params;
+  const files = req.files;
+  
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: 'Pelo menos uma imagem é obrigatória' });
+  }
+  
+  // Verificar se o limite de 10 imagens foi respeitado
+  if (files.length > 10) {
+    return res.status(400).json({ error: 'Máximo de 10 imagens por upload' });
+  }
+  
+  // Obter a ordem inicial (máximo atual + 1)
+  db.get('SELECT MAX(ordem) as maxOrdem FROM galeria_itens WHERE galeria_id = ?', [galeriaId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erro ao verificar ordem: ' + err.message });
+    }
+    
+    let proximaOrdem = (result.maxOrdem || 0) + 1;
+    const itemsCriados = [];
+    let processedCount = 0;
+    
+    // Inserir cada imagem no banco
+    files.forEach((file, index) => {
+      const imagem = `/uploads/${file.filename}`;
+      const titulo = `Imagem ${proximaOrdem + index}`;
+      const descricao = '';
+      const ordem = proximaOrdem + index;
+      
+      db.run(
+        'INSERT INTO galeria_itens (galeria_id, titulo, descricao, imagem, ordem) VALUES (?, ?, ?, ?, ?)',
+        [galeriaId, titulo, descricao, imagem, ordem],
+        function(insertErr) {
+          processedCount++;
+          
+          if (insertErr) {
+            console.error('Erro ao inserir imagem:', insertErr);
+          } else {
+            itemsCriados.push({
+              id: this.lastID,
+              titulo,
+              imagem,
+              ordem
+            });
+          }
+          
+          // Quando todas as imagens forem processadas
+          if (processedCount === files.length) {
+            res.json({
+              success: true,
+              message: `${itemsCriados.length} imagens adicionadas com sucesso!`,
+              itens: itemsCriados,
+              total: itemsCriados.length
+            });
+          }
+        }
+      );
     });
   });
 });
@@ -1491,13 +1554,13 @@ app.post('/api/configuracoes/upload-logos', requireAuth, upload.fields([
     const updates = [];
     
     // Upload do logo do navbar
-    if (req.files?.navbarLogo?.[0]) {
+    if (req.files && req.files.navbarLogo && req.files.navbarLogo[0]) {
       const navbarLogoUrl = `/uploads/${req.files.navbarLogo[0].filename}`;
       updates.push({ chave: 'navbar_logo', valor: navbarLogoUrl });
     }
     
     // Upload do logo do footer
-    if (req.files?.footerLogo?.[0]) {
+    if (req.files && req.files.footerLogo && req.files.footerLogo[0]) {
       const footerLogoUrl = `/uploads/${req.files.footerLogo[0].filename}`;
       updates.push({ chave: 'footer_logo', valor: footerLogoUrl });
     }
@@ -1671,19 +1734,19 @@ app.post('/api/seed', (req, res) => {
 // Endpoint de debug para verificar configuração
 app.get('/api/debug', (req, res) => {
   db.get('SELECT COUNT(*) as count FROM expositores', (err, row) => {
-    const expositoresCount = row?.count || 0;
+    const expositoresCount = (row && row.count) ? row.count : 0;
     
     db.get('SELECT COUNT(*) as count FROM posts', (err2, row2) => {
-      const postsCount = row2?.count || 0;
+      const postsCount = (row2 && row2.count) ? row2.count : 0;
       
       db.get('SELECT COUNT(*) as count FROM galerias', (err3, row3) => {
-        const galeriasCount = row3?.count || 0;
+        const galeriasCount = (row3 && row3.count) ? row3.count : 0;
         
         db.get('SELECT COUNT(*) as count FROM galeria_itens', (err4, row4) => {
-          const galeriaItensCount = row4?.count || 0;
+          const galeriaItensCount = (row4 && row4.count) ? row4.count : 0;
           
           db.get('SELECT COUNT(*) as count FROM carrossel', (err5, row5) => {
-            const carrosselCount = row5?.count || 0;
+            const carrosselCount = (row5 && row5.count) ? row5.count : 0;
             
             res.json({
               database_path: DB_PATH,

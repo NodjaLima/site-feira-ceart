@@ -778,6 +778,214 @@ async function deleteGaleriaItem(id) {
     }
 }
 
+// Variáveis globais para upload múltiplo
+let selectedFiles = [];
+let uploadProgress = {};
+
+// Função para abrir modal de upload múltiplo
+function abrirUploadMultiplo() {
+    if (!galeriaAtualId) {
+        showError('Selecione uma galeria primeiro!');
+        return;
+    }
+    
+    // Resetar estado
+    selectedFiles = [];
+    uploadProgress = {};
+    
+    // Limpar previews e elementos
+    document.getElementById('imagensMultiplas').value = '';
+    document.getElementById('previewGrid').innerHTML = '';
+    document.getElementById('fileCount').textContent = '0';
+    document.getElementById('progressContainer').style.display = 'none';
+    document.getElementById('submitMultiplo').disabled = true;
+    
+    openModal('uploadMultiploModal');
+}
+
+// Função para gerenciar seleção de arquivos
+function handleMultipleFiles(input) {
+    const files = Array.from(input.files);
+    const maxFiles = 10;
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    
+    // Validar quantidade
+    if (files.length > maxFiles) {
+        showError(`Máximo de ${maxFiles} arquivos permitido`);
+        input.value = '';
+        return;
+    }
+    
+    // Validar cada arquivo
+    const validFiles = [];
+    for (let file of files) {
+        if (!allowedTypes.includes(file.type)) {
+            showError(`Arquivo ${file.name} não é uma imagem válida`);
+            continue;
+        }
+        
+        if (file.size > maxFileSize) {
+            showError(`Arquivo ${file.name} é muito grande (máx: 5MB)`);
+            continue;
+        }
+        
+        validFiles.push(file);
+    }
+    
+    selectedFiles = validFiles;
+    updateFileCount();
+    generatePreviews();
+    updateSubmitButton();
+}
+
+// Atualizar contador de arquivos
+function updateFileCount() {
+    const count = selectedFiles.length;
+    document.getElementById('fileCount').textContent = count;
+    
+    const countElement = document.getElementById('fileCount').parentElement;
+    if (count > 0) {
+        countElement.style.color = '#28a745';
+    } else {
+        countElement.style.color = '#6c757d';
+    }
+}
+
+// Gerar previews das imagens
+function generatePreviews() {
+    const grid = document.getElementById('previewGrid');
+    grid.innerHTML = '';
+    
+    if (selectedFiles.length === 0) {
+        return;
+    }
+    
+    selectedFiles.forEach((file, index) => {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'preview-item';
+        previewItem.innerHTML = `
+            <div class="preview-image-container">
+                <img id="preview-${index}" alt="Preview" style="display: none;">
+                <div class="preview-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+            </div>
+            <div class="preview-info">
+                <div class="preview-name">${file.name}</div>
+                <div class="preview-size">${formatFileSize(file.size)}</div>
+                <button type="button" class="btn-remove-preview" onclick="removeFile(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="preview-progress" id="progress-${index}" style="display: none;">
+                <div class="progress-bar" style="width: 0%"></div>
+            </div>
+        `;
+        
+        grid.appendChild(previewItem);
+        
+        // Carregar preview da imagem
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById(`preview-${index}`);
+            const loading = previewItem.querySelector('.preview-loading');
+            
+            if (img && loading) {
+                img.src = e.target.result;
+                img.style.display = 'block';
+                loading.style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Remover arquivo da seleção
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    
+    // Recriar o input para refletir a mudança
+    const input = document.getElementById('imagensMultiplas');
+    const dt = new DataTransfer();
+    selectedFiles.forEach(file => dt.items.add(file));
+    input.files = dt.files;
+    
+    updateFileCount();
+    generatePreviews();
+    updateSubmitButton();
+}
+
+// Atualizar estado do botão de submit
+function updateSubmitButton() {
+    const submitBtn = document.getElementById('submitMultiplo');
+    submitBtn.disabled = selectedFiles.length === 0;
+}
+
+// Formatar tamanho do arquivo
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Função para fazer upload múltiplo
+async function submitUploadMultiplo() {
+    if (selectedFiles.length === 0) {
+        showError('Selecione pelo menos uma imagem');
+        return;
+    }
+    
+    if (!galeriaAtualId) {
+        showError('Selecione uma galeria primeiro!');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitMultiplo');
+    const progressContainer = document.getElementById('progressContainer');
+    
+    try {
+        // Desabilitar botão e mostrar container de progresso
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        progressContainer.style.display = 'block';
+        
+        // Preparar FormData
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+            formData.append('imagens', file);
+        });
+        
+        // Fazer upload com monitoramento de progresso
+        const response = await fetch(`${API_BASE}/galerias/${galeriaAtualId}/itens/bulk`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccess(`${result.created} fotos adicionadas com sucesso!`);
+            closeModal('uploadMultiploModal');
+            loadGaleriaItens(galeriaAtualId);
+            loadStats();
+        } else {
+            showError(result.error || 'Erro ao fazer upload das fotos');
+        }
+        
+    } catch (error) {
+        console.error('Erro no upload múltiplo:', error);
+        showError('Erro ao fazer upload das fotos');
+    } finally {
+        // Restaurar botão
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Fazer Upload';
+        progressContainer.style.display = 'none';
+    }
+}
+
 // ===================== CARROSSEL =====================
 
 async function loadCarrossel() {
@@ -1404,6 +1612,23 @@ function setupForms() {
             } else {
                 preview.innerHTML = '';
             }
+        });
+    }
+    
+    // Form de Upload Múltiplo
+    const uploadMultiploForm = document.getElementById('uploadMultiploForm');
+    if (uploadMultiploForm) {
+        uploadMultiploForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitUploadMultiplo();
+        });
+    }
+    
+    // Input de imagens múltiplas
+    const imagensMultiplasInput = document.getElementById('imagensMultiplas');
+    if (imagensMultiplasInput) {
+        imagensMultiplasInput.addEventListener('change', function(e) {
+            handleMultipleFiles(this);
         });
     }
 }
