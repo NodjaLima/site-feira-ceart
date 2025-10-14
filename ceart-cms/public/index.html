@@ -78,6 +78,22 @@
             color: #4CAF50;
         }
 
+        .badge {
+            background: #ff4444;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+            display: inline-block;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        .badge.zero {
+            display: none;
+        }
+
         .tab-content {
             display: none;
         }
@@ -492,6 +508,114 @@
                 padding: 0.75rem;
             }
         }
+
+        /* Estilos para Mensagens */
+        .mensagem-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mensagem-item:hover {
+            border-color: #4CAF50;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.1);
+        }
+
+        .mensagem-item.nao-lida {
+            border-left: 4px solid #ff4444;
+            background: #fefefe;
+        }
+
+        .mensagem-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .mensagem-email {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .mensagem-data {
+            margin-left: auto;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .badge-new {
+            background: #ff4444;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .mensagem-telefone {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .mensagem-preview {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .mensagem-completa {
+            padding: 0;
+        }
+
+        .mensagem-header-modal {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .mensagem-meta p {
+            margin: 8px 0;
+            color: #666;
+        }
+
+        .mensagem-conteudo {
+            margin: 20px 0;
+        }
+
+        .mensagem-texto {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            line-height: 1.6;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .mensagem-acoes {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pagination .btn {
+            min-width: 35px;
+        }
     </style>
 </head>
 <body>
@@ -537,6 +661,9 @@
             </button>
             <button class="nav-tab" onclick="showTab('carrossel')">
                 <i class="fas fa-sliders-h"></i> Carrossel
+            </button>
+            <button class="nav-tab" onclick="showTab('mensagens')">
+                <i class="fas fa-envelope"></i> Mensagens <span id="mensagens-badge" class="badge">0</span>
             </button>
             <button class="nav-tab" onclick="showTab('regulamento')">
                 <i class="fas fa-gavel"></i> Regulamento
@@ -731,6 +858,64 @@
                 </div>
                 <div id="regulamentosList" class="grid grid-1">
                     <!-- Lista de regulamentos -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Mensagens -->
+        <div id="mensagens-tab" class="tab-content">
+            <div class="card">
+                <h3><i class="fas fa-envelope"></i> Caixa de Entrada</h3>
+                <p>Mensagens enviadas através do formulário de contato do site.</p>
+                
+                <!-- Estatísticas -->
+                <div class="stats-container" style="margin-bottom: 20px;">
+                    <div class="stat-box">
+                        <span class="stat-number" id="total-mensagens">0</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number" id="mensagens-nao-lidas" style="color: #ff4444;">0</span>
+                        <span class="stat-label">Não Lidas</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number" id="mensagens-lidas" style="color: #4CAF50;">0</span>
+                        <span class="stat-label">Lidas</span>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+                    <select id="filtro-mensagens" class="form-control" style="width: 200px;">
+                        <option value="todas">Todas as mensagens</option>
+                        <option value="nao-lidas">Não lidas</option>
+                        <option value="lidas">Lidas</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadMensagens()">
+                        <i class="fas fa-sync-alt"></i> Atualizar
+                    </button>
+                </div>
+
+                <!-- Lista de Mensagens -->
+                <div id="mensagens-list">
+                    <p style="text-align: center; color: #666; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin"></i> Carregando mensagens...
+                    </p>
+                </div>
+
+                <!-- Paginação -->
+                <div id="mensagens-pagination" style="text-align: center; margin-top: 20px;">
+                    <!-- Paginação será inserida dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Modal para visualizar mensagem completa -->
+            <div id="mensagem-modal" class="modal" style="display: none;">
+                <div class="modal-content" style="max-width: 600px;">
+                    <span class="close" onclick="fecharModalMensagem()">&times;</span>
+                    <div id="mensagem-modal-content">
+                        <!-- Conteúdo da mensagem será inserido aqui -->
+                    </div>
                 </div>
             </div>
         </div>

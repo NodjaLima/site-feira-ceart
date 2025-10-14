@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCarrossel();
     loadRegulamentos();
     loadConfiguracoes();
+    loadMensagens();
+    loadMensagensStats();
     setupForms();
 });
 
@@ -1536,3 +1538,239 @@ window.saveConfiguracoes = saveConfiguracoes;
 window.previewImage = previewImage;
 window.removeGaleriaPreview = removeGaleriaPreview;
 window.logout = logout;
+
+// ===================== GERENCIAMENTO DE MENSAGENS =====================
+
+let mensagensAtual = [];
+let paginaMensagenAtual = 1;
+
+async function loadMensagens(page = 1) {
+    try {
+        paginaMensagenAtual = page;
+        const filtro = document.getElementById('filtro-mensagens')?.value || 'todas';
+        
+        const response = await fetch(`${API_BASE}/mensagens?page=${page}&limit=10`, {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('Erro ao carregar mensagens');
+        
+        const data = await response.json();
+        mensagensAtual = data.mensagens;
+        
+        // Aplicar filtro local se necessário
+        let mensagensFiltradas = mensagensAtual;
+        if (filtro === 'lidas') {
+            mensagensFiltradas = mensagensAtual.filter(m => m.lida === 1);
+        } else if (filtro === 'nao-lidas') {
+            mensagensFiltradas = mensagensAtual.filter(m => m.lida === 0);
+        }
+        
+        displayMensagens(mensagensFiltradas);
+        displayPaginacaoMensagens(data.pagination);
+        
+    } catch (error) {
+        console.error('Erro ao carregar mensagens:', error);
+        document.getElementById('mensagens-list').innerHTML = 
+            '<div style="text-align: center; color: #ff4444; padding: 40px;"><i class="fas fa-exclamation-triangle"></i> Erro ao carregar mensagens</div>';
+    }
+}
+
+function displayMensagens(mensagens) {
+    const container = document.getElementById('mensagens-list');
+    
+    if (!mensagens || mensagens.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #666; padding: 40px;"><i class="fas fa-inbox"></i> Nenhuma mensagem encontrada</div>';
+        return;
+    }
+    
+    container.innerHTML = mensagens.map(msg => `
+        <div class="mensagem-item ${msg.lida ? '' : 'nao-lida'}" onclick="visualizarMensagem(${msg.id})">
+            <div class="mensagem-header">
+                <strong>${msg.nome}</strong>
+                <span class="mensagem-email">${msg.email}</span>
+                ${!msg.lida ? '<span class="badge-new">NOVA</span>' : ''}
+                <span class="mensagem-data">${formatarDataBr(msg.created_at)}</span>
+            </div>
+            <div class="mensagem-telefone"><i class="fas fa-phone"></i> ${msg.telefone}</div>
+            <div class="mensagem-preview">${msg.mensagem_resumo || 'Sem mensagem'}</div>
+        </div>
+    `).join('');
+}
+
+function displayPaginacaoMensagens(pagination) {
+    const container = document.getElementById('mensagens-pagination');
+    if (!pagination || pagination.totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = '<div class="pagination">';
+    
+    if (pagination.page > 1) {
+        html += `<button onclick="loadMensagens(${pagination.page - 1})" class="btn btn-sm">‹ Anterior</button>`;
+    }
+    
+    for (let i = 1; i <= pagination.totalPages; i++) {
+        if (i === pagination.page) {
+            html += `<button class="btn btn-sm btn-primary">${i}</button>`;
+        } else {
+            html += `<button onclick="loadMensagens(${i})" class="btn btn-sm">${i}</button>`;
+        }
+    }
+    
+    if (pagination.page < pagination.totalPages) {
+        html += `<button onclick="loadMensagens(${pagination.page + 1})" class="btn btn-sm">Próxima ›</button>`;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+async function visualizarMensagem(id) {
+    try {
+        const response = await fetch(`${API_BASE}/mensagens/${id}`, {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('Erro ao carregar mensagem');
+        
+        const mensagem = await response.json();
+        
+        document.getElementById('mensagem-modal-content').innerHTML = `
+            <div class="mensagem-completa">
+                <div class="mensagem-header-modal">
+                    <h3><i class="fas fa-user"></i> ${mensagem.nome}</h3>
+                    <div class="mensagem-meta">
+                        <p><i class="fas fa-envelope"></i> <strong>Email:</strong> ${mensagem.email}</p>
+                        <p><i class="fas fa-phone"></i> <strong>Telefone:</strong> ${mensagem.telefone}</p>
+                        <p><i class="fas fa-clock"></i> <strong>Enviada em:</strong> ${formatarDataBr(mensagem.created_at)}</p>
+                        ${mensagem.ip_address ? `<p><i class="fas fa-globe"></i> <strong>IP:</strong> ${mensagem.ip_address}</p>` : ''}
+                    </div>
+                </div>
+                
+                ${mensagem.mensagem ? `
+                    <div class="mensagem-conteudo">
+                        <h4><i class="fas fa-comment"></i> Mensagem:</h4>
+                        <div class="mensagem-texto">${mensagem.mensagem.replace(/\n/g, '<br>')}</div>
+                    </div>
+                ` : ''}
+                
+                <div class="mensagem-acoes">
+                    <button onclick="marcarComoLida(${mensagem.id}, ${!mensagem.lida})" class="btn ${mensagem.lida ? 'btn-secondary' : 'btn-primary'}">
+                        <i class="fas fa-${mensagem.lida ? 'eye-slash' : 'eye'}"></i> 
+                        Marcar como ${mensagem.lida ? 'não lida' : 'lida'}
+                    </button>
+                    <button onclick="deletarMensagem(${mensagem.id})" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Deletar
+                    </button>
+                    <a href="mailto:${mensagem.email}" class="btn btn-success">
+                        <i class="fas fa-reply"></i> Responder por Email
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('mensagem-modal').style.display = 'block';
+        
+        // Recarregar lista para atualizar status de lida
+        loadMensagens(paginaMensagenAtual);
+        loadMensagensStats();
+        
+    } catch (error) {
+        console.error('Erro ao visualizar mensagem:', error);
+        alert('Erro ao carregar mensagem');
+    }
+}
+
+async function marcarComoLida(id, lida) {
+    try {
+        const response = await fetch(`${API_BASE}/mensagens/${id}/lida`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ lida })
+        });
+        
+        if (!response.ok) throw new Error('Erro ao atualizar mensagem');
+        
+        document.getElementById('mensagem-modal').style.display = 'none';
+        loadMensagens(paginaMensagenAtual);
+        loadMensagensStats();
+        
+    } catch (error) {
+        console.error('Erro ao marcar mensagem:', error);
+        alert('Erro ao atualizar mensagem');
+    }
+}
+
+async function deletarMensagem(id) {
+    if (!confirm('Deseja realmente deletar esta mensagem? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/mensagens/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('Erro ao deletar mensagem');
+        
+        document.getElementById('mensagem-modal').style.display = 'none';
+        loadMensagens(paginaMensagenAtual);
+        loadMensagensStats();
+        
+    } catch (error) {
+        console.error('Erro ao deletar mensagem:', error);
+        alert('Erro ao deletar mensagem');
+    }
+}
+
+async function loadMensagensStats() {
+    try {
+        const response = await fetch(`${API_BASE}/mensagens/stats/count`, {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('Erro ao carregar estatísticas');
+        
+        const stats = await response.json();
+        
+        document.getElementById('total-mensagens').textContent = stats.total;
+        document.getElementById('mensagens-nao-lidas').textContent = stats.nao_lidas;
+        document.getElementById('mensagens-lidas').textContent = stats.lidas;
+        
+        // Atualizar badge na aba
+        const badge = document.getElementById('mensagens-badge');
+        if (badge) {
+            badge.textContent = stats.nao_lidas;
+            badge.className = stats.nao_lidas > 0 ? 'badge' : 'badge zero';
+        }
+        
+    } catch (error) {
+        console.error('Erro ao carregar estatísticas de mensagens:', error);
+    }
+}
+
+function fecharModalMensagem() {
+    document.getElementById('mensagem-modal').style.display = 'none';
+}
+
+function formatarDataBr(dataISO) {
+    const data = new Date(dataISO);
+    return data.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Expor funções globalmente
+window.loadMensagens = loadMensagens;
+window.visualizarMensagem = visualizarMensagem;
+window.marcarComoLida = marcarComoLida;
+window.deletarMensagem = deletarMensagem;
+window.fecharModalMensagem = fecharModalMensagem;

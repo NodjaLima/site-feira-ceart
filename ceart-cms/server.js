@@ -313,6 +313,22 @@ db.serialize(() => {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Tabela de mensagens de contato (caixa de entrada do CMS)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS mensagens_contato (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      email TEXT NOT NULL,
+      telefone TEXT NOT NULL,
+      mensagem TEXT,
+      lida INTEGER DEFAULT 0,
+      ip_address TEXT,
+      user_agent TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 });
 
 // ==================== MIDDLEWARE DE AUTENTICAÇÃO ====================
@@ -2067,18 +2083,9 @@ if (useExplicitSMTP) {
   console.log('✉️  Transportador Gmail configurado (fallback)');
 }
 
-// Rota para enviar email do formulário de contato
+// Rota para salvar mensagem de contato na caixa de entrada do CMS
 app.post('/api/contato/enviar', async (req, res) => {
   try {
-    // Verificar se o email está configurado
-    if (!transporter) {
-      console.error('❌ Tentativa de envio de email sem transportador configurado');
-      return res.status(503).json({ 
-        success: false, 
-        message: 'Serviço de email temporariamente indisponível. Entre em contato pelos canais alternativos.' 
-      });
-    }
-
     const { nome, email, telefone, mensagem } = req.body;
 
     // Validações
@@ -2089,66 +2096,182 @@ app.post('/api/contato/enviar', async (req, res) => {
       });
     }
 
-    // Buscar email de destino das configurações do CMS
-    const emailDestino = await new Promise((resolve) => {
-      db.get(
-        'SELECT valor FROM configuracoes WHERE chave = ? AND ativo = 1',
-        ['site_email'],
-        (err, row) => {
-          if (!err && row && row.valor) {
-            resolve(row.valor);
-          } else {
-            // Se não houver configuração no CMS, usa o EMAIL_USER como destino
-            resolve(process.env.EMAIL_USER);
-          }
-        }
-      );
-    });
+    // Validar formato do email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Por favor, digite um email válido'
+      });
+    }
 
-    console.log(`📧 Preparando envio de email para: ${emailDestino}`);
+    // Obter informações da requisição
+    const ip_address = req.ip || req.connection.remoteAddress || 'unknown';
+    const user_agent = req.get('User-Agent') || 'unknown';
 
-    // Configurar opções do email
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USERNAME || process.env.EMAIL_USER;
-    const mailOptions = {
-      from: `"${nome}" <${fromEmail}>`, // Email autenticado do servidor, mas com nome do usuário
-      to: emailDestino,
-      replyTo: email, // Respostas vão para o email do usuário do formulário
-      subject: `📧 Novo contato do site - ${nome}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2c3e50;">Novo Contato do Site</h2>
-          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Nome:</strong> ${nome}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Telefone:</strong> ${telefone}</p>
-            ${mensagem ? `<p><strong>Mensagem:</strong></p><p style="white-space: pre-wrap;">${mensagem}</p>` : ''}
-          </div>
-          <p style="color: #7f8c8d; font-size: 12px;">
-            Este email foi enviado automaticamente através do formulário de contato do site Feira CEART.<br>
-            Para responder, use o botão "Responder" - sua resposta irá para: ${email}
-          </p>
-        </div>
-      `
-    };
+    console.log(`� Nova mensagem de contato: ${nome} (${email})`);
 
-    // Enviar email
-    await transporter.sendMail(mailOptions);
+    // Salvar mensagem no banco de dados
+    db.run(`
+      INSERT INTO mensagens_contato (nome, email, telefone, mensagem, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [nome, email, telefone, mensagem || '', ip_address, user_agent], function(err) {
+      if (err) {
+        console.error('❌ Erro ao salvar mensagem:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Erro interno do servidor. Tente novamente.'
+        });
+      }
 
-    console.log(`✅ Email enviado com sucesso de ${nome} (${email}) para ${emailDestino}`);
-
-    res.json({ 
-      success: true, 
-      message: 'Mensagem enviada com sucesso! Em breve entraremos em contato.' 
+      console.log(`✅ Mensagem salva com ID: ${this.lastID}`);
+      res.json({
+        success: true,
+        message: 'Mensagem enviada com sucesso! Entraremos em contato em breve.',
+        id: this.lastID
+      });
     });
 
   } catch (error) {
-    console.error('❌ Erro ao enviar email:', error);
+    console.error('❌ Erro ao salvar mensagem:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Erro ao enviar mensagem. Por favor, tente novamente mais tarde.',
+      message: 'Erro interno do servidor. Por favor, tente novamente.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
+});
+
+// ==================== ROTAS DE MENSAGENS DE CONTATO ====================
+
+// Listar mensagens (requer autenticação)
+app.get('/api/mensagens', verificarAutenticacao, (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
+
+  // Contar total de mensagens
+  db.get('SELECT COUNT(*) as total FROM mensagens_contato', (err, countResult) => {
+    if (err) {
+      console.error('Erro ao contar mensagens:', err);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+
+    // Buscar mensagens com paginação
+    db.all(`
+      SELECT id, nome, email, telefone, 
+             CASE 
+               WHEN LENGTH(mensagem) > 100 THEN SUBSTR(mensagem, 1, 100) || '...'
+               ELSE mensagem 
+             END as mensagem_resumo,
+             lida, created_at
+      FROM mensagens_contato 
+      ORDER BY created_at DESC 
+      LIMIT ? OFFSET ?
+    `, [limit, offset], (err, mensagens) => {
+      if (err) {
+        console.error('Erro ao buscar mensagens:', err);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
+      }
+
+      res.json({
+        mensagens,
+        pagination: {
+          page,
+          limit,
+          total: countResult.total,
+          totalPages: Math.ceil(countResult.total / limit)
+        }
+      });
+    });
+  });
+});
+
+// Visualizar mensagem específica (requer autenticação)
+app.get('/api/mensagens/:id', verificarAutenticacao, (req, res) => {
+  const id = req.params.id;
+
+  db.get('SELECT * FROM mensagens_contato WHERE id = ?', [id], (err, mensagem) => {
+    if (err) {
+      console.error('Erro ao buscar mensagem:', err);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+
+    if (!mensagem) {
+      return res.status(404).json({ error: 'Mensagem não encontrada' });
+    }
+
+    // Marcar como lida automaticamente ao visualizar
+    db.run('UPDATE mensagens_contato SET lida = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+
+    res.json(mensagem);
+  });
+});
+
+// Marcar mensagem como lida/não lida (requer autenticação)
+app.patch('/api/mensagens/:id/lida', verificarAutenticacao, (req, res) => {
+  const id = req.params.id;
+  const { lida } = req.body;
+
+  if (typeof lida !== 'boolean') {
+    return res.status(400).json({ error: 'Campo "lida" deve ser true ou false' });
+  }
+
+  db.run(
+    'UPDATE mensagens_contato SET lida = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [lida ? 1 : 0, id],
+    function(err) {
+      if (err) {
+        console.error('Erro ao atualizar mensagem:', err);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Mensagem não encontrada' });
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Mensagem marcada como ${lida ? 'lida' : 'não lida'}` 
+      });
+    }
+  );
+});
+
+// Deletar mensagem (requer autenticação)
+app.delete('/api/mensagens/:id', verificarAutenticacao, (req, res) => {
+  const id = req.params.id;
+
+  db.run('DELETE FROM mensagens_contato WHERE id = ?', [id], function(err) {
+    if (err) {
+      console.error('Erro ao deletar mensagem:', err);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Mensagem não encontrada' });
+    }
+
+    res.json({ success: true, message: 'Mensagem deletada com sucesso' });
+  });
+});
+
+// Estatísticas de mensagens (requer autenticação)
+app.get('/api/mensagens/stats/count', verificarAutenticacao, (req, res) => {
+  db.all(`
+    SELECT 
+      COUNT(*) as total,
+      SUM(CASE WHEN lida = 0 THEN 1 ELSE 0 END) as nao_lidas,
+      SUM(CASE WHEN lida = 1 THEN 1 ELSE 0 END) as lidas
+    FROM mensagens_contato
+  `, (err, stats) => {
+    if (err) {
+      console.error('Erro ao buscar estatísticas:', err);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+
+    res.json(stats[0]);
+  });
 });
 
 // Rota padrão
