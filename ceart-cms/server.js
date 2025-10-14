@@ -957,6 +957,16 @@ app.get('/api/galerias/:galeriaId/itens', (req, res) => {
   });
 });
 
+// GET - Contar total de imagens em todas as galerias
+app.get('/api/galeria-itens/stats/count', (req, res) => {
+  db.get('SELECT COUNT(*) as total FROM galeria_itens', (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ total: row.total });
+  });
+});
+
 // GET - Buscar item específico
 app.get('/api/galeria-itens/:id', (req, res) => {
   const { id } = req.params;
