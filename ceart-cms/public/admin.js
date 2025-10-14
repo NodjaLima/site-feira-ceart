@@ -186,7 +186,7 @@ function renderExpositores() {
                     src="${expositor.imagem || '/logo.png'}" 
                     alt="${expositor.nome}"
                     style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 2px solid #e0e0e0;"
-                    onerror="this.src='/logo.png'"
+                    onerror="this.onerror=null; this.src='/logo.png'"
                 >
                 <div style="flex: 1;">
                     <div class="item-title" style="margin-bottom: 0.5rem;">${expositor.nome}</div>
