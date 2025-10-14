@@ -1889,9 +1889,6 @@ async function visualizarMensagem(id) {
                     <button onclick="deletarMensagem(${mensagem.id})" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Deletar
                     </button>
-                    <a href="mailto:${mensagem.email}" class="btn btn-success">
-                        <i class="fas fa-reply"></i> Responder por Email
-                    </a>
                 </div>
             </div>
         `;
