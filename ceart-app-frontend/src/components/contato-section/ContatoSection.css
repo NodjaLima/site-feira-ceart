@@ -127,11 +127,48 @@
   width: 100%;
 }
 
-.contato-btn:hover {
+.contato-btn:hover:not(:disabled) {
   background-color: transparent;
   color: #2c5282;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(44, 82, 130, 0.3);
+}
+
+.contato-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mensagem de feedback */
+.form-message {
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+.form-message.success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.form-message.error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Responsive Design */

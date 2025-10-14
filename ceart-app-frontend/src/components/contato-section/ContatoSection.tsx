@@ -8,12 +8,29 @@ interface SiteConfig {
   site_address: string;
 }
 
+interface FormData {
+  nome: string;
+  email: string;
+  telefone: string;
+  mensagem: string;
+}
+
 const ContatoSection = () => {
   const [config, setConfig] = useState<SiteConfig>({
     site_email: 'contato@feiraceart.com.br',
     site_phone: '(11) 9999-9999',
     site_address: 'São Paulo, SP',
   });
+
+  const [formData, setFormData] = useState<FormData>({
+    nome: '',
+    email: '',
+    telefone: '',
+    mensagem: ''
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -31,10 +48,49 @@ const ContatoSection = () => {
     loadConfig();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Aqui você pode adicionar a lógica para enviar o formulário
-    console.log("Formulário enviado!");
+    setIsSubmitting(true);
+    setSubmitMessage(null);
+
+    try {
+      const result = await apiService.enviarContato(formData);
+      
+      setSubmitMessage({
+        type: 'success',
+        text: result.message || 'Mensagem enviada com sucesso! Em breve entraremos em contato.'
+      });
+
+      // Limpar formulário
+      setFormData({
+        nome: '',
+        email: '',
+        telefone: '',
+        mensagem: ''
+      });
+
+      // Limpar mensagem após 5 segundos
+      setTimeout(() => setSubmitMessage(null), 5000);
+
+    } catch {
+      setSubmitMessage({
+        type: 'error',
+        text: 'Erro ao enviar mensagem. Por favor, tente novamente mais tarde.'
+      });
+
+      // Limpar mensagem de erro após 5 segundos
+      setTimeout(() => setSubmitMessage(null), 5000);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -65,14 +121,23 @@ const ContatoSection = () => {
           </div>
           
           <form className="contato-form" onSubmit={handleSubmit}>
+            {submitMessage && (
+              <div className={`form-message ${submitMessage.type}`}>
+                {submitMessage.text}
+              </div>
+            )}
+            
             <div className="form-group">
               <label htmlFor="nome">Nome Completo *</label>
               <input
                 type="text"
                 id="nome"
                 name="nome"
+                value={formData.nome}
+                onChange={handleChange}
                 required
                 placeholder="Digite seu nome completo"
+                disabled={isSubmitting}
               />
             </div>
             
@@ -82,8 +147,11 @@ const ContatoSection = () => {
                 type="email"
                 id="email"
                 name="email"
+                value={formData.email}
+                onChange={handleChange}
                 required
                 placeholder="Digite seu e-mail"
+                disabled={isSubmitting}
               />
             </div>
             
@@ -93,8 +161,11 @@ const ContatoSection = () => {
                 type="tel"
                 id="telefone"
                 name="telefone"
+                value={formData.telefone}
+                onChange={handleChange}
                 required
                 placeholder="(11) 99999-9999"
+                disabled={isSubmitting}
               />
             </div>
             
@@ -103,13 +174,16 @@ const ContatoSection = () => {
               <textarea
                 id="mensagem"
                 name="mensagem"
+                value={formData.mensagem}
+                onChange={handleChange}
                 rows={4}
                 placeholder="Conte-nos mais sobre seu interesse em participar da feira"
+                disabled={isSubmitting}
               />
             </div>
             
-            <button type="submit" className="contato-btn">
-              ENVIAR MENSAGEM
+            <button type="submit" className="contato-btn" disabled={isSubmitting}>
+              {isSubmitting ? 'ENVIANDO...' : 'ENVIAR MENSAGEM'}
             </button>
           </form>
         </div>

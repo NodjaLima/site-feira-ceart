@@ -10,6 +10,7 @@ const SqliteStore = require('better-sqlite3-session-store')(session);
 const Database = require('better-sqlite3');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -2001,6 +2002,89 @@ app.delete('/api/regulamento/:id', requireAuth, (req, res) => {
   });
 });
 
+// ==================== CONFIGURAÇÃO DE EMAIL ====================
+
+// Configurar transportador de email
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'feiraceart@gmail.com',
+    pass: process.env.EMAIL_PASS // Senha de app do Gmail
+  }
+});
+
+// Rota para enviar email do formulário de contato
+app.post('/api/contato/enviar', async (req, res) => {
+  try {
+    const { nome, email, telefone, mensagem } = req.body;
+
+    // Validações
+    if (!nome || !email || !telefone) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Nome, email e telefone são obrigatórios' 
+      });
+    }
+
+    // Buscar email de destino das configurações do CMS
+    const emailDestino = await new Promise((resolve) => {
+      db.get(
+        'SELECT valor FROM configuracoes WHERE chave = ? AND ativo = 1',
+        ['site_email'],
+        (err, row) => {
+          if (!err && row && row.valor) {
+            resolve(row.valor);
+          } else {
+            resolve(process.env.EMAIL_USER || 'feiraceart@gmail.com');
+          }
+        }
+      );
+    });
+
+    console.log(`📧 Preparando envio de email para: ${emailDestino}`);
+
+    // Configurar opções do email
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'feiraceart@gmail.com',
+      to: emailDestino,
+      subject: `📧 Novo contato do site - ${nome}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2c3e50;">Novo Contato do Site</h2>
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>Nome:</strong> ${nome}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Telefone:</strong> ${telefone}</p>
+            ${mensagem ? `<p><strong>Mensagem:</strong></p><p style="white-space: pre-wrap;">${mensagem}</p>` : ''}
+          </div>
+          <p style="color: #7f8c8d; font-size: 12px;">
+            Este email foi enviado automaticamente através do formulário de contato do site Feira CEART.
+          </p>
+        </div>
+      `,
+      replyTo: email
+    };
+
+    // Enviar email
+    await transporter.sendMail(mailOptions);
+
+    console.log(`✅ Email enviado com sucesso de ${nome} (${email}) para ${emailDestino}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Mensagem enviada com sucesso! Em breve entraremos em contato.' 
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao enviar email:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao enviar mensagem. Por favor, tente novamente mais tarde.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // Rota padrão
 app.get('/', (req, res) => {
   res.json({ 
@@ -2014,6 +2098,7 @@ app.get('/', (req, res) => {
       arquivos: '/api/arquivos',
       configuracoes: '/api/configuracoes',
       regulamento: '/api/regulamento',
+      contato: 'POST /api/contato/enviar',
       admin: '/admin',
       seed: 'POST /api/seed (requer senha)',
       debug: '/api/debug'

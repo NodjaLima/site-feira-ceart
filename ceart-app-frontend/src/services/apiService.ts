@@ -297,6 +297,30 @@ class ApiService {
   }
 
   // Método para buscar informações gerais do site
+  // Método para enviar formulário de contato
+  async enviarContato(dados: { nome: string; email: string; telefone: string; mensagem?: string }) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/contato/enviar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dados),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Erro ao enviar mensagem');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Erro ao enviar contato:', error);
+      throw error;
+    }
+  }
+
   async getInfoSite() {
     const configuracoes = await this.getConfiguracoes();
     const configMap: Record<string, string> = {};
