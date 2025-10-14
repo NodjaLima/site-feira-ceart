@@ -23,6 +23,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001', // Admin Panel (mesma porta do backend)
   process.env.FRONTEND_URL, // URL do frontend no Vercel
+  'https://feira.nodjalima.com', // Domínio personalizado da feira
+  'https://www.feira.nodjalima.com', // Versão com www (opcional)
   /https:\/\/.*\.vercel\.app$/, // Permite preview deploys
   /https:\/\/.*\.railway\.app$/, // Permite Railway (para admin)
 ];
