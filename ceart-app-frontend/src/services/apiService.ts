@@ -362,6 +362,11 @@ class ApiService {
       site_email: configMap.site_email || 'contato@feiraceart.com.br',
       site_phone: configMap.site_phone || '(11) 9999-9999',
       site_address: configMap.site_address || 'São Paulo, SP',
+      // Redes sociais
+      site_instagram: configMap.site_instagram || '',
+      site_facebook: configMap.site_facebook || '',
+      site_youtube: configMap.site_youtube || '',
+      site_url: configMap.site_url || '',
     };
   }
 }
