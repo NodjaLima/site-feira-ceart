@@ -4,7 +4,7 @@ const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
 
 // Helper para completar URLs de imagem
 export function getFullImageUrl(imagePath: string | null | undefined): string {
-  if (!imagePath) return '/logo.png';
+  if (!imagePath) return '/avatar-placeholder.svg';
   if (imagePath.startsWith('http')) return imagePath;
   if (imagePath.startsWith('/')) return `${BACKEND_BASE_URL}${imagePath}`;
   return `${BACKEND_BASE_URL}/${imagePath}`;

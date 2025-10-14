@@ -183,10 +183,10 @@ function renderExpositores() {
         <div class="item-card">
             <div style="display: flex; gap: 1rem; align-items: start; margin-bottom: 1rem;">
                 <img 
-                    src="${expositor.imagem || '/logo.png'}" 
+                    src="${expositor.imagem || '/avatar-placeholder.svg'}" 
                     alt="${expositor.nome}"
                     style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 2px solid #e0e0e0;"
-                    onerror="this.onerror=null; this.src='/logo.png'"
+                    onerror="this.onerror=null; this.src='/avatar-placeholder.svg'"
                 >
                 <div style="flex: 1;">
                     <div class="item-title" style="margin-bottom: 0.5rem;">${expositor.nome}</div>

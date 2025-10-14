@@ -127,7 +127,7 @@ const ExpositorPage: React.FC = () => {
           
           <div className="expositor-hero">
             <div className="expositor-hero-image">
-              <img src={expositor.imagem || '/logo.png'} alt={expositor.nome} />
+              <img src={expositor.imagem || '/avatar-placeholder.svg'} alt={expositor.nome} />
             </div>
             
             <div className="expositor-hero-info">

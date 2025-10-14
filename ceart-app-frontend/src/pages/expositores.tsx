@@ -141,7 +141,7 @@ const Expositores = () => {
           {currentExpositores.map((expositor) => (
             <div key={expositor.id} className="expositor-card">
               <div className="expositor-foto-container">
-                <img src={expositor.imagem || '/logo.png'} alt={expositor.nome} className="expositor-foto" />
+                <img src={expositor.imagem || '/avatar-placeholder.svg'} alt={expositor.nome} className="expositor-foto" />
               </div>
               
               <div className="expositor-content">
