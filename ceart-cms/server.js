@@ -2033,10 +2033,10 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
-    // Configurações de timeout para evitar travamento
-    connectionTimeout: 15000, // 15 segundos para conectar
-    greetingTimeout: 15000,   // 15 segundos para greeting
-    socketTimeout: 25000      // 25 segundos para operações
+    // Configurações de timeout agressivas para produção
+    connectionTimeout: 8000,  // 8 segundos para conectar
+    greetingTimeout: 8000,    // 8 segundos para greeting
+    socketTimeout: 12000      // 12 segundos para operações
   });
   console.log('✉️  Transportador de email configurado com sucesso');
 }
