@@ -323,7 +323,7 @@ const requireAuth = (req, res, next) => {
     path: req.path,
     hasSession: !!req.session,
     sessionId: req.sessionID,
-    userId: req.session?.userId
+    userId: req.session && req.session.userId
   });
   
   if (req.session && req.session.userId) {
@@ -2032,7 +2032,11 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
-    }
+    },
+    // Configurações de timeout para evitar travamento
+    connectionTimeout: 15000, // 15 segundos para conectar
+    greetingTimeout: 15000,   // 15 segundos para greeting
+    socketTimeout: 25000      // 25 segundos para operações
   });
   console.log('✉️  Transportador de email configurado com sucesso');
 }

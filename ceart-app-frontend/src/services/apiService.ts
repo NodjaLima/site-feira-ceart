@@ -300,13 +300,20 @@ class ApiService {
   // Método para enviar formulário de contato
   async enviarContato(dados: { nome: string; email: string; telefone: string; mensagem?: string }) {
     try {
+      // Criar AbortController para timeout de 30 segundos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const response = await fetch(`${API_BASE_URL}/contato/enviar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(dados),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       const result = await response.json();
 
@@ -317,7 +324,15 @@ class ApiService {
       return result;
     } catch (error) {
       console.error('Erro ao enviar contato:', error);
-      throw error;
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new Error('Timeout: O envio está demorando muito. Tente novamente em alguns minutos.');
+        }
+        throw error;
+      }
+      
+      throw new Error('Erro desconhecido ao enviar mensagem');
     }
   }
 
