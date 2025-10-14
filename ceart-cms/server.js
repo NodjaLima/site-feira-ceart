@@ -13,7 +13,6 @@ const SqliteStore = require('better-sqlite3-session-store')(session);
 const Database = require('better-sqlite3');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -2031,57 +2030,7 @@ app.delete('/api/regulamento/:id', requireAuth, (req, res) => {
   });
 });
 
-// ==================== CONFIGURAÇÃO DE EMAIL ====================
-
-// Validar configuração de email ao iniciar o servidor
-const hasExplicitSMTP = process.env.SMTP_SERVER && process.env.SMTP_PORT && process.env.MAIL_USERNAME && process.env.MAIL_PASSWORD;
-const hasSimpleConfig = process.env.EMAIL_USER && process.env.EMAIL_PASS;
-
-if (!hasExplicitSMTP && !hasSimpleConfig) {
-  console.warn('⚠️  AVISO: Configuração de email não encontrada!');
-  console.warn('⚠️  Configure uma das opções:');
-  console.warn('⚠️  1. SMTP_SERVER, SMTP_PORT, MAIL_USERNAME, MAIL_PASSWORD (recomendado)');
-  console.warn('⚠️  2. EMAIL_USER, EMAIL_PASS (fallback)');
-  console.warn('⚠️  O envio de emails do formulário de contato não funcionará.');
-}
-
-// Configurar transportador de email com configuração SMTP explícita
-let transporter = null;
-
-// Preferir configuração SMTP explícita, fallback para configuração simples
-const useExplicitSMTP = process.env.SMTP_SERVER && process.env.SMTP_PORT && process.env.MAIL_USERNAME && process.env.MAIL_PASSWORD;
-const useSimpleConfig = process.env.EMAIL_USER && process.env.EMAIL_PASS;
-
-if (useExplicitSMTP) {
-  // Configuração SMTP explícita (recomendada para Railway)
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_SERVER,
-    port: parseInt(process.env.SMTP_PORT),
-    secure: process.env.SMTP_PORT === '465' ? true : false, // true para 465, false para 587
-    auth: {
-      user: process.env.MAIL_USERNAME,
-      pass: process.env.MAIL_PASSWORD,
-    },
-    // Timeouts otimizados para produção
-    connectionTimeout: 15000, // 15 segundos para conectar
-    greetingTimeout: 15000,   // 15 segundos para greeting
-    socketTimeout: 20000      // 20 segundos para operações
-  });
-  console.log(`✉️  Transportador SMTP configurado: ${process.env.SMTP_SERVER}:${process.env.SMTP_PORT}`);
-} else if (useSimpleConfig) {
-  // Fallback para configuração simples
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    connectionTimeout: 12000,
-    greetingTimeout: 12000,
-    socketTimeout: 18000
-  });
-  console.log('✉️  Transportador Gmail configurado (fallback)');
-}
+// ==================== ROTAS DE CONTATO ====================
 
 // Rota para salvar mensagem de contato na caixa de entrada do CMS
 app.post('/api/contato/enviar', async (req, res) => {
@@ -2145,7 +2094,7 @@ app.post('/api/contato/enviar', async (req, res) => {
 // ==================== ROTAS DE MENSAGENS DE CONTATO ====================
 
 // Listar mensagens (requer autenticação)
-app.get('/api/mensagens', verificarAutenticacao, (req, res) => {
+app.get('/api/mensagens', requireAuth, (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const offset = (page - 1) * limit;
@@ -2188,7 +2137,7 @@ app.get('/api/mensagens', verificarAutenticacao, (req, res) => {
 });
 
 // Visualizar mensagem específica (requer autenticação)
-app.get('/api/mensagens/:id', verificarAutenticacao, (req, res) => {
+app.get('/api/mensagens/:id', requireAuth, (req, res) => {
   const id = req.params.id;
 
   db.get('SELECT * FROM mensagens_contato WHERE id = ?', [id], (err, mensagem) => {
@@ -2209,7 +2158,7 @@ app.get('/api/mensagens/:id', verificarAutenticacao, (req, res) => {
 });
 
 // Marcar mensagem como lida/não lida (requer autenticação)
-app.patch('/api/mensagens/:id/lida', verificarAutenticacao, (req, res) => {
+app.patch('/api/mensagens/:id/lida', requireAuth, (req, res) => {
   const id = req.params.id;
   const { lida } = req.body;
 
@@ -2239,7 +2188,7 @@ app.patch('/api/mensagens/:id/lida', verificarAutenticacao, (req, res) => {
 });
 
 // Deletar mensagem (requer autenticação)
-app.delete('/api/mensagens/:id', verificarAutenticacao, (req, res) => {
+app.delete('/api/mensagens/:id', requireAuth, (req, res) => {
   const id = req.params.id;
 
   db.run('DELETE FROM mensagens_contato WHERE id = ?', [id], function(err) {
@@ -2257,7 +2206,7 @@ app.delete('/api/mensagens/:id', verificarAutenticacao, (req, res) => {
 });
 
 // Estatísticas de mensagens (requer autenticação)
-app.get('/api/mensagens/stats/count', verificarAutenticacao, (req, res) => {
+app.get('/api/mensagens/stats/count', requireAuth, (req, res) => {
   db.all(`
     SELECT 
       COUNT(*) as total,
