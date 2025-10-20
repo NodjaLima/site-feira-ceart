@@ -450,6 +450,61 @@ app.get('/api/auth/check', requireAuth, (req, res) => {
   });
 });
 
+// POST - Trocar senha
+app.post('/api/auth/change-password', requireAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.session.userId;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'A nova senha deve ter no mínimo 6 caracteres' });
+    }
+
+    db.get('SELECT * FROM users WHERE id = ?', [userId], async (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Erro ao buscar usuário' });
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
+      // Verificar senha atual
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      
+      if (!isValidPassword) {
+        return res.status(401).json({ error: 'Senha atual incorreta' });
+      }
+
+      // Hash da nova senha
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Atualizar senha no banco
+      db.run(
+        'UPDATE users SET password = ? WHERE id = ?',
+        [hashedPassword, userId],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Erro ao atualizar senha' });
+          }
+
+          res.json({ 
+            success: true, 
+            message: 'Senha alterada com sucesso' 
+          });
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Erro ao trocar senha:', error);
+    res.status(500).json({ error: 'Erro ao trocar senha' });
+  }
+});
+
 // POST - Logout
 app.post('/api/auth/logout', (req, res) => {
   req.session.destroy((err) => {

@@ -1436,6 +1436,55 @@ async function saveConfiguracoes() {
     }
 }
 
+// Trocar senha
+async function changePassword() {
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+
+    if (!currentPassword || !newPassword) {
+        showError('Preencha a senha atual e a nova senha');
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        showError('A nova senha deve ter no mínimo 6 caracteres');
+        return;
+    }
+
+    if (currentPassword === newPassword) {
+        showError('A nova senha deve ser diferente da senha atual');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/api/auth/change-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                currentPassword,
+                newPassword
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showSuccess('Senha alterada com sucesso!');
+            // Limpar campos
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+        } else {
+            showError(result.error || 'Erro ao alterar senha');
+        }
+    } catch (error) {
+        console.error('Erro ao alterar senha:', error);
+        showError('Erro ao alterar senha');
+    }
+}
+
 // ===================== FORMULÁRIOS =====================
 
 function setupForms() {
