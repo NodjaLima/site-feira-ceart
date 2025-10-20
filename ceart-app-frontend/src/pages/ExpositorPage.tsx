@@ -209,11 +209,18 @@ const ExpositorPage: React.FC = () => {
           <h2>Entre em Contato</h2>
           <div className="contato-grid">
             {expositor.telefone && (
-              <div className="contato-item">
+              <div className="contato-item" onClick={handleWhatsApp} style={{ cursor: 'pointer' }}>
                 <span className="contato-icon">📱</span>
                 <div>
                   <h4>Telefone/WhatsApp</h4>
-                  <p>{expositor.telefone}</p>
+                  <a 
+                    href={`https://wa.me/55${expositor.telefone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {expositor.telefone}
+                  </a>
                 </div>
               </div>
             )}
@@ -223,27 +230,43 @@ const ExpositorPage: React.FC = () => {
                 <span className="contato-icon">✉️</span>
                 <div>
                   <h4>Email</h4>
-                  <p>{expositor.email}</p>
+                  <a href={`mailto:${expositor.email}`}>
+                    {expositor.email}
+                  </a>
                 </div>
               </div>
             )}
             
             {expositor.instagram && (
-              <div className="contato-item">
+              <div className="contato-item" onClick={handleInstagram} style={{ cursor: 'pointer' }}>
                 <span className="contato-icon">📷</span>
                 <div>
                   <h4>Instagram</h4>
-                  <p>{expositor.instagram}</p>
+                  <a 
+                    href={`https://instagram.com/${expositor.instagram.replace('@', '').replace('instagram.com/', '').replace(/^https?:\/\//, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {expositor.instagram}
+                  </a>
                 </div>
               </div>
             )}
             
             {expositor.facebook && (
-              <div className="contato-item">
+              <div className="contato-item" onClick={handleFacebook} style={{ cursor: 'pointer' }}>
                 <span className="contato-icon">👥</span>
                 <div>
                   <h4>Facebook</h4>
-                  <p>{expositor.facebook}</p>
+                  <a 
+                    href={expositor.facebook.startsWith('http') ? expositor.facebook : `https://${expositor.facebook}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {expositor.facebook}
+                  </a>
                 </div>
               </div>
             )}
@@ -253,7 +276,13 @@ const ExpositorPage: React.FC = () => {
                 <span className="contato-icon">🌐</span>
                 <div>
                   <h4>Site/Loja Online</h4>
-                  <p>{expositor.site}</p>
+                  <a 
+                    href={expositor.site.startsWith('http') ? expositor.site : `https://${expositor.site}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {expositor.site}
+                  </a>
                 </div>
               </div>
             )}

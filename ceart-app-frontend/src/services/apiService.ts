@@ -367,6 +367,7 @@ class ApiService {
       site_facebook: configMap.site_facebook || '',
       site_youtube: configMap.site_youtube || '',
       site_url: configMap.site_url || '',
+      site_whatsapp: configMap.site_whatsapp || '',
     };
   }
 }

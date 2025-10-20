@@ -406,6 +406,13 @@
   padding: 20px;
   background: #f8f9fa;
   border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.contato-item:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .contato-icon {
@@ -420,6 +427,19 @@
 .contato-item p {
   color: #666;
   margin: 0;
+}
+
+.contato-item a {
+  color: #4CAF50;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  display: inline-block;
+}
+
+.contato-item a:hover {
+  color: #45a049;
+  text-decoration: underline;
 }
 
 .contato-cta {
