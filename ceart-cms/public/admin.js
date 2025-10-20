@@ -1339,8 +1339,6 @@ async function loadConfiguracoes() {
         setValueIfExists('siteFacebook', configMap.site_facebook);
         setValueIfExists('siteYoutube', configMap.site_youtube);
         setValueIfExists('siteUrl', configMap.site_url);
-        setValueIfExists('feiraInicio', configMap.feira_inicio);
-        setValueIfExists('feiraFim', configMap.feira_fim);
         setValueIfExists('orgName', configMap.org_name);
         setValueIfExists('orgDescription', configMap.org_description);
         setValueIfExists('feiraDescription', configMap.feira_description);
@@ -1408,8 +1406,6 @@ async function saveConfiguracoes() {
             site_facebook: { valor: getValueOrEmpty('siteFacebook'), descricao: 'Facebook' },
             site_youtube: { valor: getValueOrEmpty('siteYoutube'), descricao: 'YouTube' },
             site_url: { valor: getValueOrEmpty('siteUrl'), descricao: 'Site oficial' },
-            feira_inicio: { valor: getValueOrEmpty('feiraInicio'), descricao: 'Data de início' },
-            feira_fim: { valor: getValueOrEmpty('feiraFim'), descricao: 'Data de fim' },
             site_slogan: { valor: getValueOrEmpty('siteSlogan'), descricao: 'Slogan/Subtítulo' },
             org_name: { valor: getValueOrEmpty('orgName'), descricao: 'Nome da organização' },
             org_description: { valor: getValueOrEmpty('orgDescription'), descricao: 'Descrição da organização' },
