@@ -27,13 +27,25 @@ const Regulamento = () => {
 
   const handleDownloadRegulamento = () => {
     if (regulamento?.arquivo_pdf) {
-      // Remove a primeira barra se existir para evitar duplicação
-      const pdfPath = regulamento.arquivo_pdf.startsWith('/') 
-        ? regulamento.arquivo_pdf 
-        : `/${regulamento.arquivo_pdf}`;
+      // Verifica se já é uma URL completa (http/https)
+      const isFullUrl = regulamento.arquivo_pdf.startsWith('http://') || 
+                        regulamento.arquivo_pdf.startsWith('https://');
+      
+      let pdfUrl: string;
+      
+      if (isFullUrl) {
+        // Se já é URL completa, usa diretamente
+        pdfUrl = regulamento.arquivo_pdf;
+      } else {
+        // Se é caminho relativo, constrói a URL completa
+        const pdfPath = regulamento.arquivo_pdf.startsWith('/') 
+          ? regulamento.arquivo_pdf 
+          : `/${regulamento.arquivo_pdf}`;
+        pdfUrl = `${API_BASE_URL}${pdfPath}`;
+      }
       
       const link = document.createElement('a');
-      link.href = `${API_BASE_URL}${pdfPath}`;
+      link.href = pdfUrl;
       link.download = `regulamento-feira-ceart-${regulamento.ano}.pdf`;
       link.target = '_blank'; // Abre em nova aba como fallback
       document.body.appendChild(link);
