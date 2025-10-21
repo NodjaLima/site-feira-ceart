@@ -48,7 +48,7 @@ const Navbar = () => {
         <Link to="/contato" onClick={closeMenu}>Contato</Link>
         <Link to="/regulamento" onClick={closeMenu}>Regulamento</Link>
         <a 
-          href={import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001'} 
+          href="https://site-feira-ceart-production.up.railway.app/login"
           target="_blank" 
           rel="noopener noreferrer"
           className="navbar-admin-link"
