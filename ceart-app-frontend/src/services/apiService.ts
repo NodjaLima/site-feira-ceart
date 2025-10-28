@@ -1,5 +1,5 @@
 // Configuração base da API
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://site-feira-ceart-production.up.railway.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://site-feira-ceart-admin.up.railway.app/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
 
 // Helper para completar URLs de imagem

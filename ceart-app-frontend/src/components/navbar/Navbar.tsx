@@ -48,7 +48,7 @@ const Navbar = () => {
         <Link to="/contato" onClick={closeMenu}>Contato</Link>
         <Link to="/regulamento" onClick={closeMenu}>Regulamento</Link>
         <a 
-          href="https://site-feira-ceart-production.up.railway.app/login"
+          href="https://site-feira-ceart-admin.up.railway.app/login"
           target="_blank" 
           rel="noopener noreferrer"
           className="navbar-admin-link"

@@ -3,7 +3,7 @@ import "../styles/Regulamento.css";
 import { useRegulamento, Regulamento as RegulamentoType } from "../services/apiService";
 
 // Remove '/api' do final da URL para acessar uploads diretamente
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://site-feira-ceart-production.up.railway.app').replace(/\/api$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://site-feira-ceart-admin.up.railway.app').replace(/\/api$/, '');
 
 const Regulamento = () => {
   const [regulamento, setRegulamento] = useState<RegulamentoType | null>(null);
