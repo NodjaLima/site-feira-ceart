@@ -50,10 +50,11 @@ const BlogSection = () => {
                     {post.categoria}
                   </div>
                 </div>
-              ) : null}
-              {!post.imagem_destaque && (
-                <div style={{margin: '10px 0 0 10px', display: 'inline-block'}} className="blog-card-category">
-                  {post.categoria}
+              ) : (
+                <div className="blog-card-image" style={{height: '48px', background: 'transparent', position: 'relative'}}>
+                  <div className="blog-card-category" style={{position: 'static', margin: '10px 0 0 10px', display: 'inline-block'}}>
+                    {post.categoria}
+                  </div>
                 </div>
               )}
               <div className="blog-card-content">
