@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import placeholderLandscape from '../../assets/placeholder-landscape.svg';
 import { Link } from "react-router-dom";
 import { apiService, BlogPost } from "../../services/apiService";
 import "./BlogSection.css";
@@ -43,11 +44,14 @@ const BlogSection = () => {
         <div className="blog-posts">
           {posts.map((post) => (
             <div key={post.id} className="blog-card">
-              <div className="blog-card-image no-image" style={!post.imagem_destaque ? {minHeight: 40, height: 'auto', background: 'transparent', position: 'relative', display: 'flex', alignItems: 'flex-start'} : {position: 'relative'}}>
+              <div className={`blog-card-image${!post.imagem_destaque ? ' no-image' : ''}`}
+                style={{position: 'relative'}}>
                 {post.imagem_destaque ? (
                   <img src={post.imagem_destaque} alt={post.titulo} />
-                ) : null}
-                <div className="blog-card-category" style={!post.imagem_destaque ? {position: 'static', margin: '10px 0 0 10px', display: 'inline-block'} : {}}>
+                ) : (
+                  <img src={placeholderLandscape} alt="Paisagem padrão" style={{width: '100%', height: '100%', objectFit: 'cover', background: '#f3f3f3'}} />
+                )}
+                <div className="blog-card-category">
                   {post.categoria}
                 </div>
               </div>

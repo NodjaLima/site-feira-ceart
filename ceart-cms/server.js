@@ -863,8 +863,16 @@ app.put('/api/posts/:id', requireAuth, upload.single('imagem_destaque'), (req, r
     WHERE id = ?
   `;
   let params = [titulo, resumo, conteudo, categoria, autor, publicado !== undefined ? publicado : 1, id];
-  
-  if (req.file) {
+
+  if (req.body.remover_imagem === '1') {
+    // Remove imagem de destaque
+    query = `
+      UPDATE posts 
+      SET titulo = ?, resumo = ?, conteudo = ?, categoria = ?, imagem_destaque = NULL, autor = ?, publicado = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+    params = [titulo, resumo, conteudo, categoria, autor, publicado !== undefined ? publicado : 1, id];
+  } else if (req.file) {
     const imagem_destaque = `/uploads/${req.file.filename}`;
     query = `
       UPDATE posts 

@@ -66,11 +66,7 @@
 }
 
 .blog-card-image.no-image {
-  min-height: 40px;
-  height: auto;
-  background: transparent;
-  display: flex;
-  align-items: flex-start;
+  background: #f3f3f3;
 }
 
 .blog-card-image img {
