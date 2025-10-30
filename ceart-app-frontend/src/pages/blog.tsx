@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import placeholderLandscape from '../assets/placeholder-landscape.svg';
 import { Link } from 'react-router-dom';
 import { apiService, BlogPost } from '../services/apiService';
 import '../styles/Blog.css';
@@ -127,14 +128,14 @@ const Blog = () => {
         <div className="blog-posts-grid">
           {currentPosts.map((post) => (
             <div key={post.id} className="blog-post-card">
-              {post.imagem_destaque ? (
-                <div className="blog-post-image">
-                  <img src={post.imagem_destaque} alt={post.titulo} />
-                  <div className="blog-post-category">{post.categoria}</div>
-                </div>
-              ) : (
+              <div className="blog-post-image">
+                <img
+                  src={post.imagem_destaque ? post.imagem_destaque : placeholderLandscape}
+                  alt={post.titulo}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#f3f3f3' }}
+                />
                 <div className="blog-post-category">{post.categoria}</div>
-              )}
+              </div>
               <div className="blog-post-content">
                 <div className="blog-post-meta">
                   <span className="blog-post-date">
