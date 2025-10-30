@@ -25,6 +25,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL, // URL do frontend no Vercel
   'https://feira.nodjalima.com', // Domínio personalizado da feira
   'https://www.feira.nodjalima.com', // Versão com www (opcional)
+  'https://feiraceart.com.br', // Novo domínio principal
+  'https://www.feiraceart.com.br', // Novo domínio principal com www
   /https:\/\/.*\.vercel\.app$/, // Permite preview deploys
   /https:\/\/.*\.railway\.app$/, // Permite Railway (para admin)
 ];
