@@ -1393,6 +1393,13 @@ Conectando artesãos, empreendedores e a comunidade</textarea>
                     <label class="form-label">Imagem de Destaque</label>
                     <input type="file" class="form-control" name="imagem_destaque" accept="image/*">
                     <small class="form-text">Recomendado: 1200x600px para melhor qualidade</small>
+                        <!-- Preview e Remoção da Imagem de Destaque -->
+                        <div id="imagemDestaquePreviewContainer" style="display:none; margin-top:10px;">
+                            <img id="imagemDestaquePreview" src="" alt="Pré-visualização da Imagem de Destaque" class="image-preview" style="max-width:200px; max-height:150px; display:block; margin-bottom:8px;" />
+                            <button type="button" class="btn btn-danger" id="removerImagemDestaqueBtn" style="margin-bottom:8px;">
+                                <i class="fas fa-trash"></i> Remover Imagem
+                            </button>
+                        </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Conteúdo do Post (HTML)</label>
