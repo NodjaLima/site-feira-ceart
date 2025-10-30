@@ -44,12 +44,14 @@ const BlogSection = () => {
         <div className="blog-posts">
           {posts.map((post) => (
             <div key={post.id} className="blog-card">
-              <div className="blog-card-image">
-                {post.imagem_destaque && (
+              {post.imagem_destaque ? (
+                <div className="blog-card-image">
                   <img src={post.imagem_destaque} alt={post.titulo} />
-                )}
+                  <div className="blog-card-category">{post.categoria}</div>
+                </div>
+              ) : (
                 <div className="blog-card-category">{post.categoria}</div>
-              </div>
+              )}
               <div className="blog-card-content">
                 <div className="blog-card-meta">
                   <span className="blog-card-date">{new Date(post.data_publicacao).toLocaleDateString('pt-BR')}</span>

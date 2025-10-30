@@ -71,11 +71,11 @@ const PostPage = () => {
           <h1 className="post-title">{post.titulo}</h1>
         </div>
         
-        <div className="post-featured-image">
-          {post.imagem_destaque && (
+        {post.imagem_destaque && (
+          <div className="post-featured-image">
             <img src={post.imagem_destaque} alt={post.titulo} />
-          )}
-        </div>
+          </div>
+        )}
         
         <div className="post-content" dangerouslySetInnerHTML={{ __html: post.conteudo }} />
         
@@ -93,11 +93,11 @@ const PostPage = () => {
           <div className="related-posts">
             {relatedPosts.map(relatedPost => (
               <Link to={`/blog/post/${relatedPost.id}`} className="related-post-card" key={relatedPost.id}>
-                <div className="related-post-image">
-                  {relatedPost.imagem_destaque && (
+                {relatedPost.imagem_destaque && (
+                  <div className="related-post-image">
                     <img src={relatedPost.imagem_destaque} alt={relatedPost.titulo} />
-                  )}
-                </div>
+                  </div>
+                )}
                 <h4>{relatedPost.titulo}</h4>
                 <p className="related-post-meta">
                   <span>{relatedPost.categoria}</span>

@@ -127,12 +127,14 @@ const Blog = () => {
         <div className="blog-posts-grid">
           {currentPosts.map((post) => (
             <div key={post.id} className="blog-post-card">
-              <div className="blog-post-image">
-                {post.imagem_destaque && (
+              {post.imagem_destaque ? (
+                <div className="blog-post-image">
                   <img src={post.imagem_destaque} alt={post.titulo} />
-                )}
+                  <div className="blog-post-category">{post.categoria}</div>
+                </div>
+              ) : (
                 <div className="blog-post-category">{post.categoria}</div>
-              </div>
+              )}
               <div className="blog-post-content">
                 <div className="blog-post-meta">
                   <span className="blog-post-date">
