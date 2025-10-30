@@ -378,26 +378,44 @@ async function savePost(formData) {
         const form = document.getElementById('postForm');
         const editId = form.getAttribute('data-edit-id');
         const isEdit = editId !== null;
-        
+
+        // Garante que o campo 'resumo' (ou 'excerpt') será enviado corretamente
+        let resumo = '';
+        if (form.querySelector('[name="resumo"]')) {
+            resumo = form.querySelector('[name="resumo"]').value;
+        } else if (form.querySelector('[name="excerpt"]')) {
+            resumo = form.querySelector('[name="excerpt"]').value;
+        }
+        formData.set('resumo', resumo);
+
+        // Garante que o campo 'imagem_destaque' será enviado corretamente (se for input file)
+        const imagemInput = form.querySelector('[name="imagem_destaque"]');
+        if (imagemInput && imagemInput.files && imagemInput.files[0]) {
+            formData.set('imagem_destaque', imagemInput.files[0]);
+        } else if (imagemInput && !imagemInput.files.length && imagemInput.value) {
+            // Caso seja um campo texto (URL)
+            formData.set('imagem_destaque', imagemInput.value);
+        }
+
         const url = isEdit ? `${API_BASE}/posts/${editId}` : `${API_BASE}/posts`;
         const method = isEdit ? 'PUT' : 'POST';
-        
+
         const response = await fetch(url, {
             method: method,
             body: formData
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             showSuccess(isEdit ? 'Post atualizado com sucesso!' : 'Post publicado com sucesso!');
             closeModal('postModal');
-            
+
             // Reset form for next use
             form.removeAttribute('data-edit-id');
             form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Publicar Post';
             document.querySelector('#postModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Novo Post';
-            
+
             loadPosts();
             loadStats();
         } else {
