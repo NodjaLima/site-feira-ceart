@@ -43,17 +43,19 @@ const BlogSection = () => {
         <div className="blog-posts">
           {posts.map((post) => (
             <div key={post.id} className="blog-card">
-              <div className="blog-card-image" style={{position: 'relative'}}>
-                {post.imagem_destaque ? (
+              {post.imagem_destaque ? (
+                <div className="blog-card-image" style={{position: 'relative'}}>
                   <img src={post.imagem_destaque} alt={post.titulo} />
-                ) : null}
-                <div
-                  className="blog-card-category"
-                  style={!post.imagem_destaque ? {position: 'static', margin: '10px 0 0 10px', display: 'inline-block'} : {}}
-                >
+                  <div className="blog-card-category">
+                    {post.categoria}
+                  </div>
+                </div>
+              ) : null}
+              {!post.imagem_destaque && (
+                <div style={{margin: '10px 0 0 10px', display: 'inline-block'}} className="blog-card-category">
                   {post.categoria}
                 </div>
-              </div>
+              )}
               <div className="blog-card-content">
                 <div className="blog-card-meta">
                   <span className="blog-card-date">{new Date(post.data_publicacao).toLocaleDateString('pt-BR')}</span>

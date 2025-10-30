@@ -460,7 +460,8 @@ async function editPost(id) {
         // Preencher o formulário com os dados do post
         const form = document.getElementById('postForm');
         form.querySelector('[name="titulo"]').value = post.titulo || '';
-        form.querySelector('[name="excerpt"]').value = post.excerpt || '';
+        // Corrige: usa post.resumo se post.excerpt não existir
+        form.querySelector('[name="excerpt"]').value = post.excerpt || post.resumo || '';
         form.querySelector('[name="categoria"]').value = post.categoria || '';
         form.querySelector('[name="autor"]').value = post.autor || '';
         form.querySelector('[name="readTime"]').value = post.readTime || '5 min';
