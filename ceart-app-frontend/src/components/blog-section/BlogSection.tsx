@@ -43,20 +43,14 @@ const BlogSection = () => {
         <div className="blog-posts">
           {posts.map((post) => (
             <div key={post.id} className="blog-card">
-              {post.imagem_destaque ? (
-                <div className="blog-card-image" style={{position: 'relative'}}>
+              <div className="blog-card-image no-image" style={!post.imagem_destaque ? {minHeight: 40, height: 'auto', background: 'transparent', position: 'relative', display: 'flex', alignItems: 'flex-start'} : {position: 'relative'}}>
+                {post.imagem_destaque ? (
                   <img src={post.imagem_destaque} alt={post.titulo} />
-                  <div className="blog-card-category">
-                    {post.categoria}
-                  </div>
+                ) : null}
+                <div className="blog-card-category" style={!post.imagem_destaque ? {position: 'static', margin: '10px 0 0 10px', display: 'inline-block'} : {}}>
+                  {post.categoria}
                 </div>
-              ) : (
-                <div className="blog-card-image" style={{height: '48px', background: 'transparent', position: 'relative'}}>
-                  <div className="blog-card-category" style={{position: 'static', margin: '10px 0 0 10px', display: 'inline-block'}}>
-                    {post.categoria}
-                  </div>
-                </div>
-              )}
+              </div>
               <div className="blog-card-content">
                 <div className="blog-card-meta">
                   <span className="blog-card-date">{new Date(post.data_publicacao).toLocaleDateString('pt-BR')}</span>

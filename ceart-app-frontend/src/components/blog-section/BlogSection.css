@@ -61,6 +61,16 @@
   width: 100%;
   height: 180px;
   overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+}
+
+.blog-card-image.no-image {
+  min-height: 40px;
+  height: auto;
+  background: transparent;
+  display: flex;
+  align-items: flex-start;
 }
 
 .blog-card-image img {
@@ -86,6 +96,13 @@
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  z-index: 2;
+}
+.blog-card-image.no-image .blog-card-category {
+  position: static;
+  margin: 10px 0 0 10px;
+  display: inline-block;
+  background: rgba(233, 30, 99, 0.9);
 }
 
 .blog-card-content {
