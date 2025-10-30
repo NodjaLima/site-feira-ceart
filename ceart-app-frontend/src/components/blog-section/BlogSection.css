@@ -95,9 +95,11 @@
   z-index: 2;
 }
 .blog-card-image.no-image .blog-card-category {
-  position: static;
-  margin: 10px 0 0 10px;
-  display: inline-block;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  margin: 0;
+  display: block;
   background: rgba(233, 30, 99, 0.9);
 }
 
