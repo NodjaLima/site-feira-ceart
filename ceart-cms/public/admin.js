@@ -388,13 +388,10 @@ async function savePost(formData) {
         }
         formData.set('resumo', resumo);
 
-        // Garante que o campo 'imagem_destaque' será enviado corretamente (se for input file)
+        // Só envia 'imagem_destaque' se houver arquivo selecionado
         const imagemInput = form.querySelector('[name="imagem_destaque"]');
         if (imagemInput && imagemInput.files && imagemInput.files[0]) {
             formData.set('imagem_destaque', imagemInput.files[0]);
-        } else if (imagemInput && !imagemInput.files.length && imagemInput.value) {
-            // Caso seja um campo texto (URL)
-            formData.set('imagem_destaque', imagemInput.value);
         }
 
         const url = isEdit ? `${API_BASE}/posts/${editId}` : `${API_BASE}/posts`;
