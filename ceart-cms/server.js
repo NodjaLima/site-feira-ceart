@@ -1,3 +1,6 @@
+// Carregar variáveis de ambiente do arquivo .env
+require('dotenv').config();
+// ...existing code...
 // Middleware global para tratamento de erros - deve ser o último app.use
 app.use((err, req, res, next) => {
   console.error('Erro não tratado:', err);
@@ -6,8 +9,6 @@ app.use((err, req, res, next) => {
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
-// Carregar variáveis de ambiente do arquivo .env
-require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
