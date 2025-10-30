@@ -3,8 +3,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://site-feira-ceart-a
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
 
 // Helper para completar URLs de imagem
-export function getFullImageUrl(imagePath: string | null | undefined): string {
-  if (!imagePath) return '/avatar-placeholder.svg';
+export function getFullImageUrl(imagePath: string | null | undefined): string | undefined {
+  if (!imagePath) return undefined;
   if (imagePath.startsWith('http')) return imagePath;
   if (imagePath.startsWith('/')) return `${BACKEND_BASE_URL}${imagePath}`;
   return `${BACKEND_BASE_URL}/${imagePath}`;
@@ -14,7 +14,7 @@ export function getFullImageUrl(imagePath: string | null | undefined): string {
 export interface CarrosselItem {
   id: number;
   titulo: string;
-  imagem: string;
+  imagem: string | undefined;
   ordem: number;
   ativo: boolean;
 }
@@ -25,7 +25,7 @@ export interface Expositor {
   nome: string;
   descricao: string;
   categoria: string;
-  imagem: string;
+  imagem: string | undefined;
   contato?: string;
   telefone?: string;
   email?: string;
@@ -44,7 +44,7 @@ export interface BlogPost {
   titulo: string;
   conteudo: string;
   resumo: string;
-  imagem_destaque: string;
+  imagem_destaque?: string;
   categoria: string;
   autor: string;
   data_publicacao: string;
@@ -68,7 +68,7 @@ export interface GaleriaItem {
   galeria_id: number;
   titulo: string;
   descricao: string;
-  imagem: string;
+  imagem: string | undefined;
   ordem: number;
 }
 
