@@ -1,4 +1,34 @@
 // Admin Panel JavaScript para CEART CMS
+
+// ===================== NOTIFICAÇÕES =====================
+function showSuccess(message) {
+    showNotification(message, 'success');
+}
+
+function showError(message) {
+    showNotification(message, 'error');
+}
+
+function showNotification(message, type = 'info') {
+    let notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.position = 'fixed';
+    notification.style.top = '24px';
+    notification.style.right = '24px';
+    notification.style.zIndex = 9999;
+    notification.style.padding = '16px 24px';
+    notification.style.borderRadius = '8px';
+    notification.style.background = type === 'success' ? '#4caf50' : (type === 'error' ? '#f44336' : '#2196f3');
+    notification.style.color = '#fff';
+    notification.style.fontSize = '1rem';
+    notification.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+    notification.style.opacity = '0.95';
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.remove();
+    }, 3500);
+}
 const API_BASE = '/api';
 
 // State management
