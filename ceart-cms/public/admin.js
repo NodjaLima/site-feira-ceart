@@ -1560,7 +1560,20 @@ function setupForms() {
     if (postForm) {
         postForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const formData = new FormData(this);
+            const formData = new FormData();
+            const form = this;
+            // Adiciona campos texto
+            ['titulo', 'resumo', 'excerpt', 'categoria', 'autor', 'conteudo', 'publicado'].forEach(name => {
+                const input = form.querySelector(`[name="${name}"]`);
+                if (input && input.value !== undefined) {
+                    formData.append(name, input.value);
+                }
+            });
+            // Adiciona imagem apenas se houver arquivo
+            const imagemInput = form.querySelector('[name="imagem_destaque"]');
+            if (imagemInput && imagemInput.files && imagemInput.files[0]) {
+                formData.append('imagem_destaque', imagemInput.files[0]);
+            }
             savePost(formData);
         });
     }
