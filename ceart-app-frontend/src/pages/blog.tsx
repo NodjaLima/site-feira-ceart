@@ -128,7 +128,9 @@ const Blog = () => {
           {currentPosts.map((post) => (
             <div key={post.id} className="blog-post-card">
               <div className="blog-post-image">
-                <img src={post.imagem_destaque} alt={post.titulo} />
+                {post.imagem_destaque && (
+                  <img src={post.imagem_destaque} alt={post.titulo} />
+                )}
                 <div className="blog-post-category">{post.categoria}</div>
               </div>
               <div className="blog-post-content">
@@ -174,7 +176,7 @@ const Blog = () => {
                 <button
                   key={pageNumber}
                   onClick={() => handlePageChange(pageNumber)}
-                  className={`blog-pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
+                  className={pageNumber === currentPage ? 'active' : ''}
                 >
                   {pageNumber}
                 </button>
