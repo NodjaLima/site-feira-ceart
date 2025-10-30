@@ -423,6 +423,10 @@ async function savePost(formData) {
         if (imagemInput && imagemInput.files && imagemInput.files[0]) {
             formData.set('imagem_destaque', imagemInput.files[0]);
         }
+        // Se marcado para remover imagem
+        if (form.getAttribute('data-remove-imagem') === '1') {
+            formData.set('remover_imagem', '1');
+        }
 
         const url = isEdit ? `${API_BASE}/posts/${editId}` : `${API_BASE}/posts`;
         const method = isEdit ? 'PUT' : 'POST';
@@ -466,11 +470,44 @@ async function editPost(id) {
         form.querySelector('[name="autor"]').value = post.autor || '';
         form.querySelector('[name="readTime"]').value = post.readTime || '5 min';
         form.querySelector('[name="conteudo"]').value = post.conteudo || '';
-        
+
+        // Imagem de destaque: preview e remover
+        const previewContainer = document.getElementById('imagemDestaquePreviewContainer');
+        const previewImg = document.getElementById('imagemDestaquePreview');
+        const removerBtn = document.getElementById('removerImagemDestaqueBtn');
+        if (post.imagem_destaque) {
+            // Ajuste a URL se necessário para o backend
+            let imgUrl = post.imagem_destaque;
+            if (!/^https?:\/\//.test(imgUrl) && !imgUrl.startsWith('/')) {
+                imgUrl = API_BASE.replace('/api', '') + '/' + imgUrl.replace(/^\/+/, '');
+            } else if (imgUrl.startsWith('/')) {
+                imgUrl = API_BASE.replace('/api', '') + imgUrl;
+            }
+            previewImg.src = imgUrl;
+            previewContainer.style.display = 'block';
+        } else {
+            previewImg.src = '';
+            previewContainer.style.display = 'none';
+        }
+        // Remover imagem: marca para remoção
+        if (removerBtn) {
+            removerBtn.onclick = function() {
+                previewImg.src = '';
+                previewContainer.style.display = 'none';
+                // Limpa o input file
+                const input = form.querySelector('[name="imagem_destaque"]');
+                if (input) input.value = '';
+                // Marca para remoção no submit
+                form.setAttribute('data-remove-imagem', '1');
+            };
+        }
+        // Ao abrir para editar, limpa flag de remoção
+        form.removeAttribute('data-remove-imagem');
+
         // Alterar o formulário para modo de edição
         form.setAttribute('data-edit-id', id);
         form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Atualizar Post';
-        
+
         // Abrir o modal
         openModal('postModal');
         document.querySelector('#postModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Post';
