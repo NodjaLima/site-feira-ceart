@@ -45,7 +45,9 @@ const BlogSection = () => {
           {posts.map((post) => (
             <div key={post.id} className="blog-card">
               <div className="blog-card-image">
-                <img src={post.imagem_destaque} alt={post.titulo} />
+                {post.imagem_destaque && (
+                  <img src={post.imagem_destaque} alt={post.titulo} />
+                )}
                 <div className="blog-card-category">{post.categoria}</div>
               </div>
               <div className="blog-card-content">
