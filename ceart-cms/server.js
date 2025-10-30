@@ -1,3 +1,11 @@
+// Middleware global para tratamento de erros - deve ser o último app.use
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Erro interno do servidor',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
 // Carregar variáveis de ambiente do arquivo .env
 require('dotenv').config();
 
