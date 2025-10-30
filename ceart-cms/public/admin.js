@@ -1632,14 +1632,22 @@ function setupForms() {
             // Remove input file do DOM se não houver arquivo
             const imagemInput = form.querySelector('[name="imagem_destaque"]');
             let tempInput = null;
+            let parent = null;
+            let nextSibling = null;
             if (imagemInput && !imagemInput.files.length) {
                 tempInput = imagemInput;
+                parent = imagemInput.parentNode;
+                nextSibling = imagemInput.nextSibling;
                 imagemInput.parentNode.removeChild(imagemInput);
             }
             const formData = new FormData(form);
-            // Reinsere o input file se foi removido
-            if (tempInput) {
-                form.querySelector('.form-group').appendChild(tempInput);
+            // Reinsere o input file se foi removido, no mesmo local
+            if (tempInput && parent) {
+                if (nextSibling) {
+                    parent.insertBefore(tempInput, nextSibling);
+                } else {
+                    parent.appendChild(tempInput);
+                }
             }
             savePost(formData);
         });
