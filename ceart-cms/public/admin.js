@@ -1707,64 +1707,7 @@ function setupForms() {
 
 // ===================== UTILITÁRIOS =====================
 
-function showSuccess(message) {
-    showMessage(message, 'success');
-}
-
-function showError(message) {
-    showMessage(message, 'error');
-}
-
-function showInfo(message) {
-    showMessage(message, 'info');
-}
-
-function showMessage(message, type = 'info') {
-    // Remove existing messages
-    document.querySelectorAll('.alert').forEach(alert => alert.remove());
-    
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert ${type}`;
-    alertDiv.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-        ${message}
-        <button onclick="this.parentElement.remove()" style="float: right; background: none; border: none; font-size: 1.2rem;">&times;</button>
-    `;
-    
-    // Add to container
-    const container = document.querySelector('.container');
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (alertDiv.parentElement) {
-            alertDiv.remove();
-        }
-    }, 5000);
-}
-
-// ===================== API HELPERS =====================
-
-async function apiRequest(endpoint, options = {}) {
-    try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
-            ...options
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        return await response.json();
-    } catch (error) {
-        console.error('API Request Error:', error);
-        throw error;
-    }
-}
+// (Removido bloco duplicado e código JS solto fora de funções)
 
 // ===================== UPLOAD HELPERS =====================
 

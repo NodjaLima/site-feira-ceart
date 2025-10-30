@@ -800,7 +800,12 @@ app.get('/api/posts', (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json(rows);
+    // Adiciona data_publicacao igual a created_at
+    const posts = rows.map(post => ({
+      ...post,
+      data_publicacao: post.created_at
+    }));
+    res.json(posts);
   });
 });
 
@@ -816,8 +821,11 @@ app.get('/api/posts/:id', (req, res) => {
     if (!row) {
       return res.status(404).json({ error: 'Post não encontrado' });
     }
-    
-    res.json(row);
+    // Adiciona data_publicacao igual a created_at
+    res.json({
+      ...row,
+      data_publicacao: row.created_at
+    });
   });
 });
 
